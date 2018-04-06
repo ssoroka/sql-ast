@@ -3,6 +3,7 @@ package sqlast
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -220,7 +221,8 @@ func (s *Scanner) scanIdentifier() Item {
 	for {
 		if ch := s.read(); ch == eof {
 			break
-		} else if !isLetter(ch) && !isDigit(ch) && ch != '_' {
+		} else if !isLetter(ch) && !isDigit(ch) && ch != '_' && ch != '.' {
+			fmt.Println("ScanToken", buf.String()+string(ch))
 			s.unread()
 			break
 		} else {
@@ -321,6 +323,21 @@ func (s *Scanner) tryKeywords() bool {
 	} else if s.tryReadToken("LIMIT") {
 		s.lastReadItem = Item{Limit, s.lastReadToken}
 		return true
+	} else if s.tryReadToken("JOIN") {
+		s.lastReadItem = Item{Join, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("LEFT JOIN") {
+		s.lastReadItem = Item{LeftJoin, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("RIGHT JOIN") {
+		s.lastReadItem = Item{RightJoin, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("ON") {
+		s.lastReadItem = Item{On, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("NOT") {
+		s.lastReadItem = Item{On, s.lastReadToken}
+		return true
 	} else if s.tryReadToken("FOR UPDATE") {
 		s.lastReadItem = Item{ForUpdate, s.lastReadToken}
 		return true
@@ -329,6 +346,9 @@ func (s *Scanner) tryKeywords() bool {
 		return true
 	} else if s.tryReadToken("FALSE") {
 		s.lastReadItem = Item{Boolean, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("NULL") {
+		s.lastReadItem = Item{Null, s.lastReadToken}
 		return true
 	}
 
@@ -374,6 +394,10 @@ func (s *Scanner) tryOperands() bool {
 		return true
 	} else if s.tryReadToken("XOR") {
 		s.lastReadItem = Item{Xor, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("IS NOT") {
+		s.lastReadItem = Item{IsNot, s.lastReadToken}
+		fmt.Println("GOT IS NOT", s.lastReadItem)
 		return true
 	} else if s.tryReadToken("IS") {
 		s.lastReadItem = Item{Is, s.lastReadToken}

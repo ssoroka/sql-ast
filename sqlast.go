@@ -31,6 +31,7 @@ const (
 	Xor
 	Is
 	Not
+	IsNot
 	Like
 	Regexp
 	In
@@ -58,6 +59,12 @@ const (
 	OrderBy
 	Limit
 	ForUpdate
+	Join
+	LeftJoin
+	RightJoin
+	InnerJoin
+	On
+	Null
 )
 
 var literals = []Token{Identifier, Number, Date, Time, Boolean, QuotedString}

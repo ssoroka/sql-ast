@@ -107,6 +107,13 @@ type Expression interface {
 	String() string //
 }
 
+type DummmyExpression struct {
+}
+
+func (d *DummmyExpression) String() string {
+	return "DUMMY"
+}
+
 // // ParseExpression finds the relevant expression type and creates it and assigns it to the receiver
 // func ParseExpression(receiver interface{}, text string) {
 
@@ -125,8 +132,10 @@ func (le *LiteralExpression) String() string {
 		return strconv.QuoteToASCII(le.Val)
 	case Boolean:
 		return strings.ToUpper(le.Val)
+	case Null:
+		return "NULL"
 	default:
-		panic("can't handle literal expression token type: " + fmt.Sprintf("%d", le.Token))
+		panic("can't handle literal expression token type: " + fmt.Sprintf("%d %s", le.Token, le.Val))
 	}
 }
 

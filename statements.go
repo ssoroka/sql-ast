@@ -28,11 +28,17 @@ type SelectStatement struct {
 	Fields    []string
 	TableName string
 	Where     Expression
+	Joins     []JoinTables
 	// GroupBy
 	// Having Expression
 	// OrderBy
 	// Limit
 	ForUpdate bool
+}
+type JoinTables struct {
+	JoinType    string
+	TableName   string
+	OnCondition Expression
 }
 
 func (s *SelectStatement) String() string {
@@ -41,6 +47,12 @@ func (s *SelectStatement) String() string {
 	if s.TableName != "" {
 		out.WriteString("\n")
 		out.WriteString("FROM " + s.TableName)
+		if len(s.Joins) >= 0 {
+			for _, j := range s.Joins {
+				out.WriteString("\n\t" + j.JoinType + " " + j.TableName + " ON " + j.OnCondition.String())
+			}
+
+		}
 	}
 	if s.Where != nil {
 		out.WriteString("\nWHERE\n\t")

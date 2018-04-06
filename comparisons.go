@@ -17,8 +17,24 @@ func (co *ComparisonOperator) String() string {
 	switch co.Token {
 	case Equals:
 		return "="
+	case GreaterThan:
+		return ">"
+	case GreaterThanEquals:
+		return ">="
+	case LessThan:
+		return "<"
+	case LessThanEquals:
+		return "<="
+	case Is:
+		return "IS"
+	case Not:
+		return "NOT"
+	case IsNot:
+		return "IS NOT"
+	case NotEqual:
+		return "!="
 	default:
-		panic("unhandled comparison operator token type: " + fmt.Sprintf("%d", co.Token))
+		panic("unhandled comparison operator token type: " + fmt.Sprintf("%d,%s", co.Token, co.Val))
 	}
 }
 

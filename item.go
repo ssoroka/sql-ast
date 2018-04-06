@@ -33,7 +33,18 @@ func (i Item) Inspect() string {
 		tokenName = "Boolean"
 	case QuotedString:
 		tokenName = "QuotedString"
-
+	case LeftJoin:
+		tokenName = "LeftJoin"
+	case RightJoin:
+		tokenName = "RightJoin"
+	case Join:
+		tokenName = "Join"
+	case InnerJoin:
+		tokenName = "InnerJoin"
+	case On:
+		tokenName = "On"
+	case Null:
+		tokenName = "Null"
 	case Equals:
 		tokenName = "Equals"
 	case LessThan:
@@ -54,7 +65,8 @@ func (i Item) Inspect() string {
 		tokenName = "Is"
 	case Not:
 		tokenName = "Not"
-
+	case IsNot:
+		tokenName = "IsNot"
 	case Asterisk:
 		tokenName = "Asterisk"
 	case Comma:
