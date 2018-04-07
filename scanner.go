@@ -111,6 +111,12 @@ func (s *Scanner) tryReadToken(token string) bool {
 	}
 	// check that we're at also a border character.
 	r := s.peek()
+	if len(token) == 1 {
+		if token == readRunes.String() {
+			s.lastReadToken = readRunes.String()
+			return true
+		}
+	}
 	if !isWhitespace(r) && r != eof {
 		s.unreadString(readRunes.String())
 		return false
@@ -332,6 +338,9 @@ func (s *Scanner) tryKeywords() bool {
 	} else if s.tryReadToken("RIGHT JOIN") {
 		s.lastReadItem = Item{RightJoin, s.lastReadToken}
 		return true
+	} else if s.tryReadToken("INNER JOIN") {
+		s.lastReadItem = Item{InnerJoin, s.lastReadToken}
+		return true
 	} else if s.tryReadToken("ON") {
 		s.lastReadItem = Item{On, s.lastReadToken}
 		return true
@@ -369,6 +378,7 @@ func (s *Scanner) tryOperands() bool {
 		s.lastReadItem = Item{GreaterThan, s.lastReadToken}
 		return true
 	} else if s.tryReadToken("=") {
+		fmt.Println("Found Equals")
 		s.lastReadItem = Item{Equals, s.lastReadToken}
 		return true
 	} else if s.tryReadToken("!=") {

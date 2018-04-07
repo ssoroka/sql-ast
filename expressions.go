@@ -134,6 +134,8 @@ func (le *LiteralExpression) String() string {
 		return strings.ToUpper(le.Val)
 	case Null:
 		return "NULL"
+	case Identifier:
+		return le.Val
 	default:
 		panic("can't handle literal expression token type: " + fmt.Sprintf("%d %s", le.Token, le.Val))
 	}

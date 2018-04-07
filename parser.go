@@ -153,9 +153,15 @@ func (p *Parser) parseJoin(result *JoinTables) error {
 	} else {
 		p.unscan()
 	}
-
+	fmt.Println("Parsing Expression")
 	// ok, we have a where statement.
-	return p.parseExpression(&(result.OnCondition))
+	adad := &(result.OnCondition)
+	e := p.parseExpression(adad)
+	fmt.Println("adad", *adad)
+	if e != nil {
+		fmt.Println("error parse join condition", e.Error())
+	}
+	return e
 }
 
 // parseConditional detects the "where" or "on" clause and processes it, if any.
@@ -190,8 +196,7 @@ func (p *Parser) parseExpression(result *Expression) error {
 			} else {
 				return errors.New("Error, unexpected token " + item.Inspect() + " after WHERE")
 			}
-		case GroupBy, Having, OrderBy, Limit, ForUpdate, EOF, Where:
-			fmt.Println("parseExpression", item)
+		case GroupBy, Having, OrderBy, Limit, ForUpdate, EOF, Where, Join, LeftJoin, RightJoin, InnerJoin:
 			p.unscan()
 			done = true
 			break
@@ -202,9 +207,13 @@ func (p *Parser) parseExpression(result *Expression) error {
 		default:
 			fmt.Println("Parser Warning: Unhandled token", item.Inspect())
 		}
-		items = append(items, item)
-	}
+		if item.Token != Where && item.Token != On && item.Token != Join &&
+			item.Token != LeftJoin && item.Token != RightJoin && item.Token != InnerJoin {
+			items = append(items, item)
+		}
 
+	}
+	fmt.Println(items)
 	//todo: write expression
 	if len(items) > 0 {
 		if err := parseSubExpression(result, items); err != nil {

@@ -8,7 +8,7 @@ import (
 )
 
 func TestParse(t *testing.T) {
-	source := strings.NewReader("select table1.field1,table2.field2 from table1 left join table2 on table1.field3=table2.field4 where table1.field1>20")
+	source := strings.NewReader("select table1.field1,table2.field2 from table1 left join table2 on table1.field3=table2.field4 inner join table3 on table3.fieldA=table1.field1 where table1.field1>20")
 	parser := NewParser(source)
 	//var selectStatement ast.Statement
 	selectStatement := Statement(&SelectStatement{})
@@ -33,4 +33,7 @@ func TestParse(t *testing.T) {
 		t.Error("Failed to parse joins")
 		return
 	}
+	t.Log(pp.Joins[0])
+	t.Log(pp.Joins[1])
+	//t.Log(pp)
 }
