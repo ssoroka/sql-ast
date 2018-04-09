@@ -64,19 +64,22 @@ func (p *Parser) Parse(result *Statement) error {
 	for {
 		// Read a field.
 		item := p.nextItem()
+		fmt.Println("Selecting field", item)
 		switch item.Token {
 		case Identifier, Asterisk, Number:
+			fmt.Println("FoundIdentifier")
 			statement.Fields = append(statement.Fields, item.Val)
 		case Multiply: // special case for now.
 			statement.Fields = append(statement.Fields, "*")
-		// case Join, LeftJoin, RightJoin, InnerJoin:
-		// 	newJoinStatement := &JoinTables{}
-		// 	newJoinStatement.JoinType = item.String()
-		// 	p.parseJoin(newJoinStatement)
-		// 	fmt.Println("pp", newJoinStatement, item.String())
-		// 	if newJoinStatement.TableName != "" {
-		// 		statement.Joins = append(statement.Joins, *newJoinStatement)
-		// 	}
+		case Count, Avg, Min, Max, Sum:
+			p.unscan()
+			ag := Aggregate{}
+			e := p.parseAggregate(&ag)
+			if e != nil {
+				return e
+			}
+			statement.Aggregates = append(statement.Aggregates, ag)
+			statement.Fields = append(statement.Fields, ag.String())
 		default:
 			return fmt.Errorf("found %v, expected field", item.Inspect())
 		}
@@ -117,9 +120,10 @@ func (p *Parser) Parse(result *Statement) error {
 			case Join, LeftJoin, RightJoin, InnerJoin:
 				newJoinStatement := &JoinTables{}
 				newJoinStatement.JoinType = item.String()
-				fmt.Println("pp", newJoinStatement)
-				p.parseJoin(newJoinStatement)
-
+				e := p.parseJoin(newJoinStatement)
+				if e != nil {
+					return e
+				}
 				if newJoinStatement.TableName != "" {
 					statement.Joins = append(statement.Joins, *newJoinStatement)
 				}
@@ -133,8 +137,129 @@ func (p *Parser) Parse(result *Statement) error {
 	if err = p.parseConditional(&statement.Where); err != nil {
 		return err
 	}
+nextOption:
+	for {
+		item := p.nextItem()
+		switch item.Token {
+		case Whitespace:
+			continue
+		case GroupBy:
+			p.parseGroupBy(&(statement.GroupBy))
+		case Having:
+			p.parseExpression(&statement.Having)
+		case OrderBy:
+
+		case EOF:
+			break nextOption
+		}
+	}
 
 	*result = Statement(statement)
+	return nil
+}
+func (p *Parser) parseOrderBy(result *[]SortField) error {
+	var curField SortField
+	for {
+		item := p.nextItem()
+		switch item.Token {
+		case Whitespace:
+			continue
+		case Limit, EOF:
+			return nil
+		case Identifier:
+			if curField.Field != "" {
+				return errors.New("Sort order not found after " + curField.Field)
+			}
+			curField.Field = item.Val
+		case Asc, Desc:
+			if curField.Sort != "" {
+				return errors.New("Sort order duplicateFound, expected comma")
+			}
+		case Comma:
+			*result = append(*result, curField)
+			curField = SortField{}
+		}
+	}
+}
+func (p *Parser) parseGroupBy(result *[]string) error {
+	for {
+		v := p.nextItem()
+		switch v.Token {
+		case Whitespace:
+			continue
+		case Identifier:
+			*result = append(*result, v.Val)
+		case OrderBy, Having, EOF:
+			p.unscan()
+			return nil
+		}
+	}
+}
+
+// parse aggregate AVG,SUM,MAX,MIN,COUNT
+func (p *Parser) parseAggregate(result *Aggregate) error {
+	// retrieve aggregate function
+	aggrFunc := p.nextItem()
+	result.AggregateType = aggrFunc.Val
+	parentOpenFound := false
+	parentOpenNum := 0
+	//parentCloseFound := false
+AggrLoop:
+	for {
+		item := p.nextItem()
+		switch item.Token {
+		case Whitespace:
+			continue
+		case ParenOpen:
+			fmt.Println("Found ParentOpen")
+			parentOpenFound = true
+			parentOpenNum++
+		case ParenClose:
+			if !parentOpenFound {
+				return errors.New("Closing parenthesis found befor open parenthesis")
+			}
+			fmt.Println("Found ParentCLose")
+			parentOpenNum--
+			// parentCloseFound = true
+			if parentOpenNum == 0 {
+				break AggrLoop
+			}
+		case Identifier, Multiply:
+			if !parentOpenFound {
+				return errors.New("Identifier found befor open parenthesis")
+			}
+			if item.Token == Multiply && aggrFunc.Token != Count {
+				return errors.New("Identifier * Can only be used on Count")
+			}
+			fmt.Println("Found Identifier")
+			result.FieldName = item.Val
+		case Comma:
+			p.unscan()
+			break AggrLoop
+		}
+
+	}
+	if parentOpenNum != 0 {
+		return errors.New("NO matching bracket")
+	}
+	// parOpen := p.nextItem()
+	// if parOpen.Token != ParenOpen {
+	// 	return errors.New(fmt.Sprintf("Expected '(' but found %s instead after %s", parOpen.Val, aggrFunc.Val))
+	// }
+	// result.AggregateType = aggrFunc.Val
+	// fieldVal := p.nextItem()
+	// if fieldVal.Token != Identifier && fieldVal.Token != Multiply { // we compare Multiply to allow count(*)
+	// 	return errors.New(fmt.Sprintf("Expected Field Name but found %s instead after %s", parOpen.Val, aggrFunc.Val))
+	// }
+	// if fieldVal.Token != Multiply && aggrFunc.Token != Count {
+	// 	return errors.New(fmt.Sprintf("Only Count allowed to use * as parameter"))
+	// }
+	// result.FieldName = fieldVal.Val
+	// parenClose := p.nextItem()
+	// fmt.Println("parenClose", parenClose)
+	// if parOpen.Token != ParenOpen {
+	// 	return errors.New(fmt.Sprintf("Expected ')' but found %s instead after %s", parenClose.Val, fieldVal.Val))
+	// }
 	return nil
 }
 
@@ -153,14 +278,14 @@ func (p *Parser) parseJoin(result *JoinTables) error {
 	} else {
 		p.unscan()
 	}
-	fmt.Println("Parsing Expression")
+	//fmt.Println("Parsing Expression")
 	// ok, we have a where statement.
 	adad := &(result.OnCondition)
 	e := p.parseExpression(adad)
-	fmt.Println("adad", *adad)
-	if e != nil {
-		fmt.Println("error parse join condition", e.Error())
-	}
+	//fmt.Println("adad", *adad)
+	// if e != nil {
+	// 	fmt.Println("error parse join condition", e.Error())
+	// }
 	return e
 }
 
@@ -208,7 +333,8 @@ func (p *Parser) parseExpression(result *Expression) error {
 			fmt.Println("Parser Warning: Unhandled token", item.Inspect())
 		}
 		if item.Token != Where && item.Token != On && item.Token != Join &&
-			item.Token != LeftJoin && item.Token != RightJoin && item.Token != InnerJoin {
+			item.Token != LeftJoin && item.Token != RightJoin &&
+			item.Token != InnerJoin && item.Token != OrderBy && item.Token != GroupBy {
 			items = append(items, item)
 		}
 
@@ -255,13 +381,13 @@ func (p *Parser) parseExpression(result *Expression) error {
 // parseSubExpression is called when we know we have an expression.
 func parseSubExpression(result *Expression, items []Item) error {
 	items = withoutWhitespace(items)
-	fmt.Println("Processing this", items, len(items))
-	fmt.Println(items[0], items[len(items)-1])
+	// fmt.Println("Processing this", items, len(items))
+	// fmt.Println(items[0], items[len(items)-1])
 	// strip parens if start and ends with parens
 	if len(items) >= 3 && items[0].Token == ParenOpen && items[len(items)-1].Token == ParenClose {
 		var expression Expression
-		pp := items[1 : len(items)-1]
-		fmt.Println("Removing parenthesis", items[1:len(items)-1], len(pp))
+		//pp := items[1 : len(items)-1]
+		// fmt.Println("Removing parenthesis", items[1:len(items)-1], len(pp))
 		if err := parseSubExpression(&expression, items[1:len(items)-1]); err != nil {
 			return errors.Wrapf(err, "error parsing paren expression: %s", itemsString(items[1:len(items)-1]))
 		}
@@ -294,7 +420,7 @@ func parseSubExpression(result *Expression, items []Item) error {
 			}
 			i++
 		}
-		fmt.Println("ParentCount", parenCount)
+		//fmt.Println("ParentCount", parenCount)
 		if items[i-1].Token != ParenClose || parenCount > 0 {
 			return errors.New("Opening parenthesis without matching closing parenthesis: " + itemsString(items))
 		}
@@ -326,19 +452,19 @@ func parseSubExpression(result *Expression, items []Item) error {
 			if err := parseSubExpression(&rightExpression, rightItems); err != nil {
 				return errors.Wrap(err, "Error parsing sub expression(2): "+itemsString(items))
 			}
-			if leftExpression != nil {
-				fmt.Println("LeftExpression is ", leftExpression)
-			}
-			if rightExpression != nil {
-				fmt.Println("RightExpression is", rightExpression)
-			}
-			fmt.Println("items[idx]", items[idx].Inspect())
+			// if leftExpression != nil {
+			// 	fmt.Println("LeftExpression is ", leftExpression)
+			// }
+			// if rightExpression != nil {
+			// 	fmt.Println("RightExpression is", rightExpression)
+			// }
+			//fmt.Println("items[idx]", items[idx].Inspect())
 			rp := LogicalExpression{
 				Left:     leftExpression,
 				Operator: LogicalOperator{Token: items[idx].Token, Val: items[idx].Val},
 				Right:    rightExpression,
 			}
-			fmt.Println("Result", *result)
+			//fmt.Println("Result", *result)
 			*result = &rp
 			return nil
 		}

@@ -96,6 +96,7 @@ func (s *Scanner) unread() {
 // otherwise readToken returns true and saves the value to lastReadToken.
 func (s *Scanner) tryReadToken(token string) bool {
 	log.Println("tryReadToken", token)
+
 	readRunes := &bytes.Buffer{}
 	for i := 0; i < len(token); i++ {
 		r := s.read()
@@ -111,14 +112,17 @@ func (s *Scanner) tryReadToken(token string) bool {
 	}
 	// check that we're at also a border character.
 	r := s.peek()
-	if len(token) == 1 {
+	if (len(token) == 1 && isOperator(rune(token[0]))) || (len(token) == 2 && isOperator(rune(token[0])) && isOperator(rune(token[1]))) {
 		if token == readRunes.String() {
 			s.lastReadToken = readRunes.String()
 			return true
 		}
 	}
-	if !isWhitespace(r) && r != eof {
+	if !isWhitespace(r) && !isParenthesis(r) && r != eof {
 		s.unreadString(readRunes.String())
+		if token == "SUM" {
+			fmt.Println("Failed read SUM,", !isParenthesis(r))
+		}
 		return false
 	}
 	s.lastReadToken = readRunes.String()
@@ -228,7 +232,6 @@ func (s *Scanner) scanIdentifier() Item {
 		if ch := s.read(); ch == eof {
 			break
 		} else if !isLetter(ch) && !isDigit(ch) && ch != '_' && ch != '.' {
-			fmt.Println("ScanToken", buf.String()+string(ch))
 			s.unread()
 			break
 		} else {
@@ -291,7 +294,9 @@ func isLetter(ch rune) bool {
 func isDigit(ch rune) bool {
 	return ch >= '0' && ch <= '9'
 }
-
+func isParenthesis(ch rune) bool {
+	return ch == '(' || ch == ')'
+}
 func isOperator(ch rune) bool {
 	return ch == '=' ||
 		ch == '<' ||
@@ -319,6 +324,21 @@ func (s *Scanner) tryKeywords() bool {
 		return true
 	} else if s.tryReadToken("GROUP BY") {
 		s.lastReadItem = Item{GroupBy, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("SUM") {
+		s.lastReadItem = Item{Sum, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("AVG") {
+		s.lastReadItem = Item{Avg, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("MIN") {
+		s.lastReadItem = Item{Min, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("MAX") {
+		s.lastReadItem = Item{Max, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("COUNT") {
+		s.lastReadItem = Item{Count, s.lastReadToken}
 		return true
 	} else if s.tryReadToken("HAVING") {
 		s.lastReadItem = Item{Having, s.lastReadToken}
@@ -359,6 +379,27 @@ func (s *Scanner) tryKeywords() bool {
 	} else if s.tryReadToken("NULL") {
 		s.lastReadItem = Item{Null, s.lastReadToken}
 		return true
+	} else if s.tryReadToken("CASE") {
+		s.lastReadItem = Item{Case, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("WHEN") {
+		s.lastReadItem = Item{When, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("THEN") {
+		s.lastReadItem = Item{Then, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("ELSE") {
+		s.lastReadItem = Item{Else, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("END") {
+		s.lastReadItem = Item{End, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("ASC") {
+		s.lastReadItem = Item{Asc, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("DESC") {
+		s.lastReadItem = Item{Desc, s.lastReadToken}
+		return true
 	}
 
 	return false
@@ -372,6 +413,7 @@ func (s *Scanner) tryOperands() bool {
 		s.lastReadItem = Item{LessThan, s.lastReadToken}
 		return true
 	} else if s.tryReadToken(">=") {
+		fmt.Println("Found Greater Than Eq")
 		s.lastReadItem = Item{GreaterThanEquals, s.lastReadToken}
 		return true
 	} else if s.tryReadToken(">") {

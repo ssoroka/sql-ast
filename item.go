@@ -94,6 +94,16 @@ func (i Item) Inspect() string {
 		tokenName = "Limit"
 	case ForUpdate:
 		tokenName = "ForUpdate"
+	case Sum:
+		tokenName = "Sum"
+	case Avg:
+		tokenName = "Avg"
+	case Max:
+		tokenName = "Max"
+	case Min:
+		tokenName = "Min"
+	case Count:
+		tokenName = "Count"
 	default:
 		tokenName = "Unknwon Token"
 	}

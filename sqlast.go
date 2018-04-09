@@ -65,6 +65,20 @@ const (
 	InnerJoin
 	On
 	Null
+	Case
+	When
+	Then
+	Else
+	End
+	Asc
+	Desc
+
+	//aggregate
+	Sum
+	Avg
+	Count
+	Max
+	Min
 )
 
 var literals = []Token{Identifier, Number, Date, Time, Boolean, QuotedString}
