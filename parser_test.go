@@ -92,3 +92,20 @@ func TestAliasField(t *testing.T) {
 	}
 	t.Log(pp.SelectAl)
 }
+func TestAliasTable(t *testing.T) {
+	source := strings.NewReader("select table1.field1,table2.field2 from table1 t1 left join table2 t2 on table1.field3=table2.field4 inner join table3 as t3 on table3.fieldA=table1.field1 where table1.field1>=20")
+	parser := NewParser(source)
+	//var selectStatement ast.Statement
+	selectStatement := Statement(&SelectStatement{})
+	err := parser.Parse(&selectStatement)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(-1)
+	}
+	pp := selectStatement.(*SelectStatement)
+	if len(pp.TableAl) != 3 {
+		t.Fail()
+		t.Errorf("Failed to parse alias table")
+	}
+	t.Log(pp.TableAl)
+}

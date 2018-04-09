@@ -93,6 +93,45 @@ detectAliasLoop:
 	}
 	return false
 }
+func (p *Parser) DetectTableAlias(result *SelectStatement, item Item) bool {
+	var nextItem Item
+detectAliasLoop:
+	for {
+		nextItem = p.nextItem()
+		if nextItem.Token != Whitespace {
+			break detectAliasLoop
+		}
+	}
+	switch nextItem.Token {
+	case Identifier, As: // we found indication of alias
+		if nextItem.Token == Identifier {
+			newAlias := TableAlias{item.Val, nextItem.Val}
+			result.TableAl = append(result.TableAl, newAlias)
+		} else {
+		identifierLookup:
+			for {
+				ii := p.nextItem()
+				switch ii.Token {
+				case Whitespace:
+					continue
+				case Identifier:
+					newAlias := TableAlias{item.Val, ii.Val}
+					result.TableAl = append(result.TableAl, newAlias)
+					break identifierLookup
+				default:
+					p.unscan()
+					break identifierLookup
+				}
+			}
+		}
+		return false
+
+	default:
+		p.unscan()
+		return false
+	}
+	return false
+}
 
 // Parse parses the tokens provided by a scanner (lexer) into an AST
 func (p *Parser) Parse(result *Statement) error {
@@ -105,7 +144,7 @@ func (p *Parser) Parse(result *Statement) error {
 	for {
 		// Read a field.
 		item := p.nextItem()
-		
+
 		switch item.Token {
 		case Identifier, Asterisk, Number:
 			//fmt.Println("FoundIdentifier")
@@ -146,7 +185,10 @@ func (p *Parser) Parse(result *Statement) error {
 		return fmt.Errorf("found %v, expected table name", item.Inspect())
 	}
 	statement.TableName = item.Val
-
+	pTable := Item{}
+	pTable.Token = Identifier
+	pTable.Val = item.Val
+	p.DetectTableAlias(statement, pTable)
 	if item := p.nextItem(); item.Token == Join || item.Token == LeftJoin || item.Token == RightJoin || item.Token == InnerJoin {
 		//fmt.Println("Join Found")
 		p.unscan()
@@ -165,7 +207,7 @@ func (p *Parser) Parse(result *Statement) error {
 			case Join, LeftJoin, RightJoin, InnerJoin:
 				newJoinStatement := &JoinTables{}
 				newJoinStatement.JoinType = item.String()
-				e := p.parseJoin(newJoinStatement)
+				e := p.parseJoin(newJoinStatement, statement)
 				if e != nil {
 					return e
 				}
@@ -307,13 +349,18 @@ AggrLoop:
 }
 
 // parseJoin detects the "JOIN" clause and processes it, if any.
-func (p *Parser) parseJoin(result *JoinTables) error {
+func (p *Parser) parseJoin(result *JoinTables, statement *SelectStatement) error {
 	// retrieve table name
 	tableName := p.nextItem()
+	pTable := Item{}
+	pTable.Token = Identifier
+	pTable.Val = tableName.Val
+	p.DetectTableAlias(statement, pTable)
 	result.TableName = tableName.Val
 	// retrieve on field
 	onCond := p.nextItem()
 	fmt.Println("TableName", result.TableName, onCond.Val)
+
 	if onCond.Token != On {
 		fmt.Errorf("Expected on, but found %s instead", onCond)
 		p.unscan()
