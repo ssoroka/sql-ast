@@ -70,3 +70,25 @@ func TestGroupByHaving(t *testing.T) {
 		t.Errorf("Expecting %s got %s instead", "table1.field2 <= 10", pp.Having.String())
 	}
 }
+func TestAliasField(t *testing.T) {
+	source := strings.NewReader("select sum(table1.field1) as v1,avg(table2.field2) v2,table2.field2 b2 from table1 where table1.field1>=20 Group by table1.field12,table1.field10 having table1.field2<=10")
+	parser := NewParser(source)
+	//var selectStatement ast.Statement
+	selectStatement := Statement(&SelectStatement{})
+	err := parser.Parse(&selectStatement)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(-1)
+	}
+	pp := selectStatement.(*SelectStatement)
+	if len(pp.SelectAl) == 0 {
+		t.Fail()
+		t.Errorf("Failed to parse alias field ")
+	}
+	if len(pp.SelectAl) != 3 {
+		t.Fail()
+		t.Errorf("Failed to parse alias field Content of SelectAl %s content of Aggregates %s", pp.SelectAl, pp.Aggregates)
+
+	}
+	t.Log(pp.SelectAl)
+}

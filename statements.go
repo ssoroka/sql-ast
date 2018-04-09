@@ -27,9 +27,11 @@ type Statement interface {
 type SelectStatement struct {
 	Distinct   bool
 	Fields     []string
+	SelectAl   []SelectAlias
 	TableName  string
 	Where      Expression
 	Joins      []JoinTables
+	TableAl    []TableAlias
 	Aggregates []Aggregate
 	GroupBy    []string
 	Having     Expression

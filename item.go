@@ -104,6 +104,8 @@ func (i Item) Inspect() string {
 		tokenName = "Min"
 	case Count:
 		tokenName = "Count"
+	case As:
+		tokenName = "As"
 	default:
 		tokenName = "Unknwon Token"
 	}

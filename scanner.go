@@ -400,6 +400,9 @@ func (s *Scanner) tryKeywords() bool {
 	} else if s.tryReadToken("DESC") {
 		s.lastReadItem = Item{Desc, s.lastReadToken}
 		return true
+	} else if s.tryReadToken("AS") {
+		s.lastReadItem = Item{As, s.lastReadToken}
+		return true
 	}
 
 	return false
@@ -413,14 +416,13 @@ func (s *Scanner) tryOperands() bool {
 		s.lastReadItem = Item{LessThan, s.lastReadToken}
 		return true
 	} else if s.tryReadToken(">=") {
-		fmt.Println("Found Greater Than Eq")
 		s.lastReadItem = Item{GreaterThanEquals, s.lastReadToken}
 		return true
 	} else if s.tryReadToken(">") {
 		s.lastReadItem = Item{GreaterThan, s.lastReadToken}
 		return true
 	} else if s.tryReadToken("=") {
-		fmt.Println("Found Equals")
+
 		s.lastReadItem = Item{Equals, s.lastReadToken}
 		return true
 	} else if s.tryReadToken("!=") {
@@ -449,7 +451,7 @@ func (s *Scanner) tryOperands() bool {
 		return true
 	} else if s.tryReadToken("IS NOT") {
 		s.lastReadItem = Item{IsNot, s.lastReadToken}
-		fmt.Println("GOT IS NOT", s.lastReadItem)
+
 		return true
 	} else if s.tryReadToken("IS") {
 		s.lastReadItem = Item{Is, s.lastReadToken}

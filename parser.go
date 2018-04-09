@@ -52,6 +52,47 @@ func (p *Parser) nextItem() Item {
 	}
 	return item
 }
+func (p *Parser) DetectFieldAlias(result *SelectStatement, item Item) bool {
+	var nextItem Item
+detectAliasLoop:
+	for {
+		nextItem = p.nextItem()
+		if nextItem.Token != Whitespace {
+			break detectAliasLoop
+		}
+	}
+	switch nextItem.Token {
+	case Comma:
+		p.unscan()
+		return false
+	case Identifier, As: // we found indication of alias
+		if nextItem.Token == Identifier {
+			newAlias := SelectAlias{item.Val, nextItem.Val}
+			result.SelectAl = append(result.SelectAl, newAlias)
+		} else {
+		identifierLookup:
+			for {
+				ii := p.nextItem()
+				switch ii.Token {
+				case Whitespace:
+					continue
+				case Identifier:
+					newAlias := SelectAlias{item.Val, ii.Val}
+					result.SelectAl = append(result.SelectAl, newAlias)
+					break identifierLookup
+				default:
+					p.unscan()
+					break identifierLookup
+				}
+			}
+		}
+		return false
+	default:
+		p.unscan()
+		return false
+	}
+	return false
+}
 
 // Parse parses the tokens provided by a scanner (lexer) into an AST
 func (p *Parser) Parse(result *Statement) error {
@@ -64,11 +105,12 @@ func (p *Parser) Parse(result *Statement) error {
 	for {
 		// Read a field.
 		item := p.nextItem()
-		fmt.Println("Selecting field", item)
+		
 		switch item.Token {
 		case Identifier, Asterisk, Number:
-			fmt.Println("FoundIdentifier")
+			//fmt.Println("FoundIdentifier")
 			statement.Fields = append(statement.Fields, item.Val)
+			p.DetectFieldAlias(statement, item)
 		case Multiply: // special case for now.
 			statement.Fields = append(statement.Fields, "*")
 		case Count, Avg, Min, Max, Sum:
@@ -80,12 +122,15 @@ func (p *Parser) Parse(result *Statement) error {
 			}
 			statement.Aggregates = append(statement.Aggregates, ag)
 			statement.Fields = append(statement.Fields, ag.String())
+			pItem := Item{item.Token, ag.String()}
+			p.DetectFieldAlias(statement, pItem)
 		default:
 			return fmt.Errorf("found %v, expected field", item.Inspect())
 		}
 
 		// If the next token is not a comma then break the loop.
 		if item := p.nextItem(); item.Token != Comma {
+			fmt.Println(item)
 			p.unscan()
 			break
 		}
@@ -211,14 +256,12 @@ AggrLoop:
 		case Whitespace:
 			continue
 		case ParenOpen:
-			fmt.Println("Found ParentOpen")
 			parentOpenFound = true
 			parentOpenNum++
 		case ParenClose:
 			if !parentOpenFound {
 				return errors.New("Closing parenthesis found befor open parenthesis")
 			}
-			fmt.Println("Found ParentCLose")
 			parentOpenNum--
 			// parentCloseFound = true
 			if parentOpenNum == 0 {
@@ -231,7 +274,7 @@ AggrLoop:
 			if item.Token == Multiply && aggrFunc.Token != Count {
 				return errors.New("Identifier * Can only be used on Count")
 			}
-			fmt.Println("Found Identifier")
+
 			result.FieldName = item.Val
 		case Comma:
 			p.unscan()
@@ -339,7 +382,7 @@ func (p *Parser) parseExpression(result *Expression) error {
 		}
 
 	}
-	fmt.Println(items)
+	// fmt.Println(items)
 	//todo: write expression
 	if len(items) > 0 {
 		if err := parseSubExpression(result, items); err != nil {

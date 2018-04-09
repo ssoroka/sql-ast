@@ -72,6 +72,7 @@ const (
 	End
 	Asc
 	Desc
+	As
 
 	//aggregate
 	Sum
