@@ -109,3 +109,61 @@ func TestAliasTable(t *testing.T) {
 	}
 	t.Log(pp.TableAl)
 }
+func TestCaseSelect1(t *testing.T) {
+	query := `SELECT
+	player_name,
+	year,
+	"is_a_senior" = CASE WHEN year = "SR" THEN "yes" ELSE NULL END
+  FROM
+	benn.college_football_players
+  `
+	source := strings.NewReader(query)
+	parser := NewParser(source)
+	//var selectStatement ast.Statement
+	selectStatement := Statement(&SelectStatement{})
+	err := parser.Parse(&selectStatement)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(-1)
+	}
+	pp := selectStatement.(*SelectStatement)
+	if len(pp.CaseFields) == 0 {
+		t.Fail()
+		t.Errorf("Failed to parse CASE condition")
+	}
+	t.Log(pp.CaseFields)
+	if len(pp.Fields) != 3 {
+		t.Fail()
+		t.Errorf("Failed to correctly detect fields")
+	}
+	fmt.Println(pp.Fields)
+}
+func TestCaseSelect2(t *testing.T) {
+	query := `SELECT
+	player_name,
+	year,
+	CASE WHEN year = "SR" THEN "yes" ELSE NULL END is_a_senior
+  FROM
+	benn.college_football_players
+  `
+	source := strings.NewReader(query)
+	parser := NewParser(source)
+	//var selectStatement ast.Statement
+	selectStatement := Statement(&SelectStatement{})
+	err := parser.Parse(&selectStatement)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(-1)
+	}
+	pp := selectStatement.(*SelectStatement)
+	if len(pp.CaseFields) == 0 {
+		t.Fail()
+		t.Errorf("Failed to parse CASE condition")
+	}
+	t.Log(pp.CaseFields)
+	if len(pp.Fields) != 3 {
+		t.Fail()
+		t.Errorf("Failed to correctly detect fields")
+	}
+	fmt.Println(pp.CaseFields[0].String())
+}

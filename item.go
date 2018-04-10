@@ -106,6 +106,14 @@ func (i Item) Inspect() string {
 		tokenName = "Count"
 	case As:
 		tokenName = "As"
+	case Case:
+		tokenName = "Case"
+	case Then:
+		tokenName = "Then"
+	case When:
+		tokenName = "When"
+	case End:
+		tokenName = "End"
 	default:
 		tokenName = "Unknwon Token"
 	}

@@ -132,6 +132,80 @@ detectAliasLoop:
 	}
 	return false
 }
+func (p *Parser) parseCase(result *SelectStatement, alias string) error {
+	var newCase *CaseField
+	var newWhen *WhenCond
+	for {
+		item := p.nextItem()
+		switch item.Token {
+		case Whitespace:
+			continue
+		case End:
+			newCase.WhenCond = append(newCase.WhenCond, *newWhen)
+			newWhen = nil
+			//newCase.WhenCond = append(newCase.WhenCond, *newWhen)
+			newCase.Alias = alias
+			result.CaseFields = append(result.CaseFields, *newCase)
+			return nil
+		case Case:
+			if newCase != nil {
+				result.CaseFields = append(result.CaseFields, *newCase)
+			}
+			newCase = &CaseField{}
+		case When:
+			if newWhen != nil {
+				newCase.WhenCond = append(newCase.WhenCond, *newWhen)
+			}
+			newWhen = &WhenCond{}
+			e := p.parseExpression(&(newWhen.WhenCond))
+			if e != nil {
+				return e
+			}
+		case Then, Else:
+			if newWhen == nil {
+				return errors.New("Then found without preceeding When <condition>")
+			}
+			var thenItem Item
+			thenItems := []Item{}
+		thenLookup:
+			for {
+				thenItem = p.nextItem()
+				switch thenItem.Token {
+				case Whitespace:
+					continue
+				case Else, When, End, From:
+					p.unscan()
+					break thenLookup
+				default:
+					thenItems = append(thenItems, thenItem)
+				}
+			}
+			if item.Token == Then {
+				if len(thenItems) == 1 {
+					newWhen.ThenCond = thenItems[0].Val
+				} else {
+					var expression Expression
+					e := parseSubExpression(&expression, thenItems)
+					if e != nil {
+						return e
+					}
+					newWhen.ThenCond = expression.String()
+				}
+			} else { // ELSE statement
+				if len(thenItems) == 1 {
+					newCase.ElseCond = thenItems[0].Val
+				} else {
+					var expression Expression
+					e := parseSubExpression(&expression, thenItems)
+					if e != nil {
+						return e
+					}
+					newCase.ElseCond = expression.String()
+				}
+			}
+		}
+	}
+}
 
 // Parse parses the tokens provided by a scanner (lexer) into an AST
 func (p *Parser) Parse(result *Statement) error {
@@ -144,7 +218,7 @@ func (p *Parser) Parse(result *Statement) error {
 	for {
 		// Read a field.
 		item := p.nextItem()
-
+		fmt.Println("item", item)
 		switch item.Token {
 		case Identifier, Asterisk, Number:
 			//fmt.Println("FoundIdentifier")
@@ -163,6 +237,69 @@ func (p *Parser) Parse(result *Statement) error {
 			statement.Fields = append(statement.Fields, ag.String())
 			pItem := Item{item.Token, ag.String()}
 			p.DetectFieldAlias(statement, pItem)
+		case QuotedString:
+			// check the following non Whitespace token
+			statement.Fields = append(statement.Fields, strconv.QuoteToASCII(item.Val))
+			var nextItem Item
+		CaseWhenLoop1:
+			for {
+				nextItem = p.nextItem()
+				fmt.Println("NextItem", nextItem)
+				switch nextItem.Token {
+				case Whitespace:
+					continue
+				case Equals: //we found case...when...then...end
+					e := p.parseCase(statement, item.Val)
+					fmt.Println("Parse Case Done")
+					if e != nil {
+						return e
+					}
+					break CaseWhenLoop1
+				case Case:
+					fmt.Println(statement)
+					return errors.New("Need = before Case in select field")
+				default:
+					p.unscan()
+					break CaseWhenLoop1
+				}
+			}
+		case Case:
+			p.unscan()
+			e := p.parseCase(statement, "")
+			if e != nil {
+				return e
+			}
+			fmt.Println("Parse Case Done")
+		detectCaseAlias:
+			for {
+				nitem := p.nextItem()
+				switch nitem.Token {
+				case Whitespace:
+
+				case Identifier, As:
+					if nitem.Token == Identifier {
+						statement.CaseFields[len(statement.CaseFields)-1].Alias = nitem.Val
+					} else {
+					detectAlias:
+						for {
+							n2 := p.nextItem()
+							switch n2.Token {
+							case Identifier:
+								statement.CaseFields[len(statement.CaseFields)-1].Alias = n2.Val
+								break detectAlias
+							default:
+								p.unscan()
+								return errors.New("Syntax Error, Expecting Identifier after AS, got " + n2.String() + " instead")
+							}
+						}
+					}
+					statement.Fields = append(statement.Fields, statement.CaseFields[len(statement.CaseFields)-1].Alias)
+				default:
+					p.unscan()
+					break detectCaseAlias
+				}
+			}
+
 		default:
 			return fmt.Errorf("found %v, expected field", item.Inspect())
 		}
@@ -411,7 +548,7 @@ func (p *Parser) parseExpression(result *Expression) error {
 			} else {
 				return errors.New("Error, unexpected token " + item.Inspect() + " after WHERE")
 			}
-		case GroupBy, Having, OrderBy, Limit, ForUpdate, EOF, Where, Join, LeftJoin, RightJoin, InnerJoin:
+		case GroupBy, Having, OrderBy, Limit, ForUpdate, EOF, Where, Join, LeftJoin, RightJoin, InnerJoin, Then:
 			p.unscan()
 			done = true
 			break
@@ -424,12 +561,12 @@ func (p *Parser) parseExpression(result *Expression) error {
 		}
 		if item.Token != Where && item.Token != On && item.Token != Join &&
 			item.Token != LeftJoin && item.Token != RightJoin &&
-			item.Token != InnerJoin && item.Token != OrderBy && item.Token != GroupBy {
+			item.Token != InnerJoin && item.Token != OrderBy && item.Token != GroupBy && item.Token != Then {
 			items = append(items, item)
 		}
 
 	}
-	// fmt.Println(items)
+	fmt.Println(items)
 	//todo: write expression
 	if len(items) > 0 {
 		if err := parseSubExpression(result, items); err != nil {
@@ -525,7 +662,39 @@ func parseSubExpression(result *Expression, items []Item) error {
 		}
 	}
 	//	if we only have 2 elements, we probably have a NOT or something.
-
+	// if we have 3 element and the middle is either comparator operator
+	// if len(items) == 3 {
+	// 	if isOperator(rune(items[1].Val[0])) {
+	// 		var rightExp LiteralExpression
+	// 		var leftExp IdentifierExpression
+	// 		switch items[0].Token {
+	// 		case Identifier, Number, QuotedString:
+	// 			a := IdentifierExpression{}
+	// 			a.Name = items[0].Val
+	// 			leftExp = a
+	// 		default:
+	// 			return errors.New("Invalid Type of operand " + items[0].Val + " in Comparasion")
+	// 		}
+	// 		switch items[2].Token {
+	// 		case Identifier, Number, QuotedString:
+	// 			a := LiteralExpression{}
+	// 			a.Val = items[2].Val
+	// 			a.Token = items[2].Token
+	// 			rightExp = a
+	// 		default:
+	// 			return errors.New("Invalid Type of operand " + items[0].Val + " in Comparasion")
+	// 		}
+	// 		operator := &ComparisonOperator{}
+	// 		operator.Token = items[1].Token
+	// 		operator.Val = items[1].Val
+	// 		*result = &BooleanExpression{
+	// 			Left:     leftExp,
+	// 			Right:    &rightExp,
+	// 			Operator: operator,
+	// 		}
+	// 		return nil
+	// 	}
+	// }
 	// otherwise start breaking it up by order of operator precedence.
 	logicalOperators := []Token{And, Xor, Or}
 	for _, op := range logicalOperators {

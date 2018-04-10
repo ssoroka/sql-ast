@@ -62,8 +62,8 @@ func TestSimpleSelectWhereQuotedStringEquality(t *testing.T) {
 	var ast Statement
 	err := Parse(&ast, `select 1 FROM some_other_table where a = "giraffe"`)
 	if err != nil {
-		t.Error(err)
-		t.FailNow()
+		t.Error("EEE", err)
+		t.Fail()
 	}
 	expectedOutput := `SELECT 1
 FROM some_other_table

@@ -36,12 +36,45 @@ type SelectStatement struct {
 	GroupBy    []string
 	Having     Expression
 	OrderBy    []SortField
+	CaseFields []CaseField
 	// GroupBy
 	// Having Expression
 	// OrderBy
 	// Limit
 	ForUpdate bool
 }
+type CaseField struct {
+	Alias    string
+	WhenCond []WhenCond
+	ElseCond string
+}
+
+func (c *CaseField) String() string {
+	buffer := bytes.NewBuffer([]byte{})
+	buffer.WriteString("CASE\n")
+	for _, w := range c.WhenCond {
+		buffer.WriteString("\t" + w.String() + "\n")
+	}
+	if c.ElseCond != "" {
+		buffer.WriteString("\t ELSE " + c.ElseCond + "\n")
+	}
+	buffer.WriteString("END")
+	if c.Alias != "" {
+		buffer.WriteString(" AS " + c.Alias)
+	}
+	buffer.WriteString("\n")
+	return buffer.String()
+}
+
+type WhenCond struct {
+	WhenCond Expression
+	ThenCond string
+}
+
+func (w *WhenCond) String() string {
+	return "WHEN " + w.WhenCond.String() + " THEN " + w.ThenCond
+}
+
 type Aggregate struct {
 	AggregateType string
 	FieldName     string
