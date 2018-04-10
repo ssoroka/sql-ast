@@ -80,17 +80,29 @@ func TestAliasField(t *testing.T) {
 		fmt.Println(err.Error())
 		os.Exit(-1)
 	}
+	output := `SELECT sum(table1.field1) AS v1, avg(table2.field2) AS v2, table2.field2 AS b2
+FROM table1
+WHERE
+	table1.field1 >= 20
+GROUP BY
+	table1.field12,table1.field10
+Having
+	table1.field2 <= 10`
 	pp := selectStatement.(*SelectStatement)
-	if len(pp.SelectAl) == 0 {
+	if len(pp.ComplexSelects) == 0 {
 		t.Fail()
 		t.Errorf("Failed to parse alias field ")
 	}
-	if len(pp.SelectAl) != 3 {
+	if len(pp.ComplexSelects) != 3 {
 		t.Fail()
 		t.Errorf("Failed to parse alias field Content of SelectAl %s content of Aggregates %s", pp.SelectAl, pp.Aggregates)
 
 	}
-	t.Log(pp.SelectAl)
+	if pp.String() != output {
+		t.Errorf("Output is Different, Expecting %s but got %s instead", output, pp.String())
+		t.Fail()
+		return
+	}
 }
 func TestAliasTable(t *testing.T) {
 	source := strings.NewReader("select table1.field1,table2.field2 from table1 t1 left join table2 t2 on table1.field3=table2.field4 inner join table3 as t3 on table3.fieldA=table1.field1 where table1.field1>=20")
@@ -132,11 +144,11 @@ func TestCaseSelect1(t *testing.T) {
 		t.Errorf("Failed to parse CASE condition")
 	}
 	t.Log(pp.CaseFields)
-	if len(pp.Fields) != 3 {
+	if len(pp.ComplexSelects) != 3 {
 		t.Fail()
 		t.Errorf("Failed to correctly detect fields")
 	}
-	fmt.Println(pp.Fields)
+	fmt.Println(pp.ComplexSelects)
 }
 func TestCaseSelect2(t *testing.T) {
 	query := `SELECT
@@ -155,15 +167,50 @@ func TestCaseSelect2(t *testing.T) {
 		fmt.Println(err.Error())
 		os.Exit(-1)
 	}
+	output := `SELECT player_name, year, CASE
+	WHEN year = "SR" THEN "yes"
+	 ELSE NULL
+END
+ AS is_a_senior
+FROM benn.college_football_players`
 	pp := selectStatement.(*SelectStatement)
 	if len(pp.CaseFields) == 0 {
 		t.Fail()
 		t.Errorf("Failed to parse CASE condition")
 	}
 	t.Log(pp.CaseFields)
-	if len(pp.Fields) != 3 {
+	if len(pp.ComplexSelects) != 3 {
 		t.Fail()
 		t.Errorf("Failed to correctly detect fields")
 	}
-	fmt.Println(pp.CaseFields[0].String())
+	if pp.String() != output {
+		t.Errorf("Output is Different, Expecting %s but got %s instead", output, pp.String())
+		t.Fail()
+		return
+	}
+}
+func TestSelectStringSingleQuote(t *testing.T) {
+	source := strings.NewReader("select '' AS f1,\"pp\" LU from MM")
+	parser := NewParser(source)
+	//var selectStatement ast.Statement
+	selectStatement := Statement(&SelectStatement{})
+	err := parser.Parse(&selectStatement)
+	if err != nil {
+		t.Fail()
+		fmt.Println(err.Error())
+		return
+	}
+	pp := selectStatement.(*SelectStatement)
+	if len(pp.ComplexSelects) != 2 {
+		t.Error("Error Parsing field")
+		t.Fail()
+	}
+	output := `SELECT '' AS f1, "pp" AS LU
+FROM MM`
+	if pp.String() != output {
+		t.Errorf("Output is Different, Expecting %s but got %s instead", output, pp.String())
+		t.Fail()
+		return
+	}
+
 }

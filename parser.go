@@ -54,6 +54,7 @@ func (p *Parser) nextItem() Item {
 }
 func (p *Parser) DetectFieldAlias(result *SelectStatement, item Item) bool {
 	var nextItem Item
+	var FoundAlias bool
 detectAliasLoop:
 	for {
 		nextItem = p.nextItem()
@@ -64,9 +65,10 @@ detectAliasLoop:
 	switch nextItem.Token {
 	case Comma:
 		p.unscan()
-		return false
+		return FoundAlias
 	case Identifier, As: // we found indication of alias
 		if nextItem.Token == Identifier {
+			FoundAlias = true
 			newAlias := SelectAlias{item.Val, nextItem.Val}
 			result.SelectAl = append(result.SelectAl, newAlias)
 		} else {
@@ -77,6 +79,7 @@ detectAliasLoop:
 				case Whitespace:
 					continue
 				case Identifier:
+					FoundAlias = true
 					newAlias := SelectAlias{item.Val, ii.Val}
 					result.SelectAl = append(result.SelectAl, newAlias)
 					break identifierLookup
@@ -86,12 +89,12 @@ detectAliasLoop:
 				}
 			}
 		}
-		return false
+		return FoundAlias
 	default:
 		p.unscan()
-		return false
+		return FoundAlias
 	}
-	return false
+	return FoundAlias
 }
 func (p *Parser) DetectTableAlias(result *SelectStatement, item Item) bool {
 	var nextItem Item
@@ -145,7 +148,13 @@ func (p *Parser) parseCase(result *SelectStatement, alias string) error {
 			newWhen = nil
 			//newCase.WhenCond = append(newCase.WhenCond, *newWhen)
 			newCase.Alias = alias
+			newComplexSelect := ComplexSelect{}
+			newComplexSelect.CaseStatement = newCase
+			if alias != "" {
+				newComplexSelect.Alias = alias
+			}
 			result.CaseFields = append(result.CaseFields, *newCase)
+			result.ComplexSelects = append(result.ComplexSelects, newComplexSelect)
 			return nil
 		case Case:
 			if newCase != nil {
@@ -182,7 +191,8 @@ func (p *Parser) parseCase(result *SelectStatement, alias string) error {
 			}
 			if item.Token == Then {
 				if len(thenItems) == 1 {
-					newWhen.ThenCond = thenItems[0].Val
+					le := LiteralExpression{thenItems[0].Token, thenItems[0].Val}
+					newWhen.ThenCond = le.String()
 				} else {
 					var expression Expression
 					e := parseSubExpression(&expression, thenItems)
@@ -193,7 +203,8 @@ func (p *Parser) parseCase(result *SelectStatement, alias string) error {
 				}
 			} else { // ELSE statement
 				if len(thenItems) == 1 {
-					newCase.ElseCond = thenItems[0].Val
+					le := LiteralExpression{thenItems[0].Token, thenItems[0].Val}
+					newCase.ElseCond = le.String()
 				} else {
 					var expression Expression
 					e := parseSubExpression(&expression, thenItems)
@@ -221,11 +232,20 @@ func (p *Parser) Parse(result *Statement) error {
 		fmt.Println("item", item)
 		switch item.Token {
 		case Identifier, Asterisk, Number:
-			//fmt.Println("FoundIdentifier")
+
 			statement.Fields = append(statement.Fields, item.Val)
-			p.DetectFieldAlias(statement, item)
+			newComplexSelect := ComplexSelect{}
+			newComplexSelect.FieldName = item.Val
+			fmt.Println("FoundIdentifier", item.Val)
+			if p.DetectFieldAlias(statement, item) {
+				newComplexSelect.Alias = statement.SelectAl[len(statement.SelectAl)-1].Alias
+			}
+			statement.ComplexSelects = append(statement.ComplexSelects, newComplexSelect)
 		case Multiply: // special case for now.
 			statement.Fields = append(statement.Fields, "*")
+			newComplexSelect := ComplexSelect{}
+			newComplexSelect.FieldName = "*"
+			statement.ComplexSelects = append(statement.ComplexSelects, newComplexSelect)
 		case Count, Avg, Min, Max, Sum:
 			p.unscan()
 			ag := Aggregate{}
@@ -236,8 +256,13 @@ func (p *Parser) Parse(result *Statement) error {
 			statement.Aggregates = append(statement.Aggregates, ag)
 			statement.Fields = append(statement.Fields, ag.String())
 			pItem := Item{item.Token, ag.String()}
-			p.DetectFieldAlias(statement, pItem)
-		case QuotedString:
+			newComplexSelect := ComplexSelect{}
+			newComplexSelect.AggregateField = &ag
+			if p.DetectFieldAlias(statement, pItem) {
+				newComplexSelect.Alias = statement.SelectAl[len(statement.SelectAl)-1].Alias
+			}
+			statement.ComplexSelects = append(statement.ComplexSelects, newComplexSelect)
+		case QuotedString, SinglQuotedString:
 			// check the following non Whitespace token
 			statement.Fields = append(statement.Fields, strconv.QuoteToASCII(item.Val))
 			var nextItem Item
@@ -258,6 +283,18 @@ func (p *Parser) Parse(result *Statement) error {
 				case Case:
 					fmt.Println(statement)
 					return errors.New("Need = before Case in select field")
+				case As, Identifier: //WeFoundAlias
+					fmt.Println("Alias Detected")
+					p.unscan()
+					newComplexSelect := ComplexSelect{}
+					le := LiteralExpression{item.Token, item.Val}
+					newComplexSelect.StaticValue = le.String()
+					if p.DetectFieldAlias(statement, item) {
+						fmt.Println("Alias Found")
+						newComplexSelect.Alias = statement.SelectAl[len(statement.SelectAl)-1].Alias
+					}
+					statement.ComplexSelects = append(statement.ComplexSelects, newComplexSelect)
+					break CaseWhenLoop1
 				default:
 					p.unscan()
 					break CaseWhenLoop1
@@ -279,6 +316,7 @@ func (p *Parser) Parse(result *Statement) error {
 				case Identifier, As:
 					if nitem.Token == Identifier {
 						statement.CaseFields[len(statement.CaseFields)-1].Alias = nitem.Val
+						statement.ComplexSelects[len(statement.ComplexSelects)-1].Alias = nitem.Val
 					} else {
 					detectAlias:
 						for {
@@ -286,6 +324,7 @@ func (p *Parser) Parse(result *Statement) error {
 							switch n2.Token {
 							case Identifier:
 								statement.CaseFields[len(statement.CaseFields)-1].Alias = n2.Val
+								statement.ComplexSelects[len(statement.ComplexSelects)-1].Alias = n2.Val
 								break detectAlias
 							default:
 								p.unscan()
@@ -437,6 +476,7 @@ AggrLoop:
 		case ParenOpen:
 			parentOpenFound = true
 			parentOpenNum++
+			result.Params = append(result.Params, item)
 		case ParenClose:
 			if !parentOpenFound {
 				return errors.New("Closing parenthesis found befor open parenthesis")
@@ -444,20 +484,22 @@ AggrLoop:
 			parentOpenNum--
 			// parentCloseFound = true
 			if parentOpenNum == 0 {
+				result.Params = append(result.Params, item)
 				break AggrLoop
 			}
-		case Identifier, Multiply:
+
+		case Identifier, Multiply, Asterisk:
 			if !parentOpenFound {
 				return errors.New("Identifier found befor open parenthesis")
 			}
-			if item.Token == Multiply && aggrFunc.Token != Count {
+			if (item.Token == Multiply || item.Token == Asterisk) && aggrFunc.Token != Count {
 				return errors.New("Identifier * Can only be used on Count")
 			}
 
 			result.FieldName = item.Val
+			result.Params = append(result.Params, item)
 		case Comma:
-			p.unscan()
-			break AggrLoop
+			result.Params = append(result.Params, item)
 		}
 
 	}
@@ -548,7 +590,8 @@ func (p *Parser) parseExpression(result *Expression) error {
 			} else {
 				return errors.New("Error, unexpected token " + item.Inspect() + " after WHERE")
 			}
-		case GroupBy, Having, OrderBy, Limit, ForUpdate, EOF, Where, Join, LeftJoin, RightJoin, InnerJoin, Then:
+		case GroupBy, Having, OrderBy, Limit, ForUpdate, EOF, Where, Join, LeftJoin, RightJoin, InnerJoin, Then,
+			LeftOuterJoin, RightOuterJoin:
 			p.unscan()
 			done = true
 			break
@@ -560,7 +603,7 @@ func (p *Parser) parseExpression(result *Expression) error {
 			fmt.Println("Parser Warning: Unhandled token", item.Inspect())
 		}
 		if item.Token != Where && item.Token != On && item.Token != Join &&
-			item.Token != LeftJoin && item.Token != RightJoin &&
+			item.Token != LeftJoin && item.Token != RightJoin && item.Token != RightOuterJoin && item.Token != LeftOuterJoin &&
 			item.Token != InnerJoin && item.Token != OrderBy && item.Token != GroupBy && item.Token != Then {
 			items = append(items, item)
 		}

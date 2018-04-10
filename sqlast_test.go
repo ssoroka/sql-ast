@@ -115,7 +115,7 @@ WHERE
 
 func TestSimpleSelectWhereMSingleWithSubExpression(t *testing.T) {
 	var ast Statement
-	err := Parse(&ast, `select 1 FROM some_other_table where ( q is not null or q >= 3 )`)
+	err := Parse(&ast, `select 1 FROM some_other_table where (q is not null or q >= 3)`)
 	// and last_known_date > "2015-05-02"
 	// and created_at <= NOW()
 	// `SELECT 1 FROM some_other_table WHERE a = 1 AND b = e.something AND (q IS NOT NULL OR q >= 3) AND last_known_date > "2015-05-02" AND created_at <= NOW()`

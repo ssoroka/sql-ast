@@ -130,6 +130,14 @@ func (le *LiteralExpression) String() string {
 		return le.Val
 	case QuotedString:
 		return strconv.QuoteToASCII(le.Val)
+	case SinglQuotedString:
+		return fmt.Sprintf("'%s'", le.Val)
+	case Comma:
+		return ","
+	case ParenOpen:
+		return "("
+	case ParenClose:
+		return ")"
 	case Boolean:
 		return strings.ToUpper(le.Val)
 	case Null:

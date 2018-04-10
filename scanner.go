@@ -182,7 +182,10 @@ func (s *Scanner) Scan() Item {
 		s.unread()
 		return s.scanQuotedString()
 	}
-
+	if ch == 39 {
+		s.unread()
+		return s.scanSingleQuotedString()
+	}
 	// Otherwise read the individual character.
 	switch ch {
 	case eof:
@@ -260,7 +263,22 @@ func (s *Scanner) scanNumber() Item {
 
 	return Item{Number, buf.String()}
 }
-
+func (s *Scanner) scanSingleQuotedString() Item {
+	var buf bytes.Buffer
+	quoteChr := s.read()
+	_ = quoteChr
+	for {
+		ch := s.read()
+		if ch == eof {
+			return Item{Illegal, "EOF found before end of string"}
+		}
+		if ch == 39 {
+			break
+		}
+		_, _ = buf.WriteRune(ch)
+	}
+	return Item{SinglQuotedString, buf.String()}
+}
 func (s *Scanner) scanQuotedString() Item {
 	var buf bytes.Buffer
 	quoteChr := s.read()
@@ -355,8 +373,14 @@ func (s *Scanner) tryKeywords() bool {
 	} else if s.tryReadToken("LEFT JOIN") {
 		s.lastReadItem = Item{LeftJoin, s.lastReadToken}
 		return true
+	} else if s.tryReadToken("LEFT OUTER JOIN") {
+		s.lastReadItem = Item{LeftOuterJoin, s.lastReadToken}
+		return true
 	} else if s.tryReadToken("RIGHT JOIN") {
 		s.lastReadItem = Item{RightJoin, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("RIGHT OUTER JOIN") {
+		s.lastReadItem = Item{RightOuterJoin, s.lastReadToken}
 		return true
 	} else if s.tryReadToken("INNER JOIN") {
 		s.lastReadItem = Item{InnerJoin, s.lastReadToken}

@@ -2,7 +2,6 @@ package sqlast
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
 )
 
@@ -25,24 +24,50 @@ type Statement interface {
 //     [LIMIT {[offset,] row_count | row_count OFFSET offset}]
 //     [FOR UPDATE | LOCK IN SHARE MODE]]
 type SelectStatement struct {
-	Distinct   bool
-	Fields     []string
-	SelectAl   []SelectAlias
-	TableName  string
-	Where      Expression
-	Joins      []JoinTables
-	TableAl    []TableAlias
-	Aggregates []Aggregate
-	GroupBy    []string
-	Having     Expression
-	OrderBy    []SortField
-	CaseFields []CaseField
+	Distinct       bool
+	Fields         []string
+	SelectAl       []SelectAlias
+	ComplexSelects []ComplexSelect
+	TableName      string
+	Where          Expression
+	Joins          []JoinTables
+	TableAl        []TableAlias
+	Aggregates     []Aggregate
+	GroupBy        []string
+	Having         Expression
+	OrderBy        []SortField
+	CaseFields     []CaseField
 	// GroupBy
 	// Having Expression
 	// OrderBy
 	// Limit
 	ForUpdate bool
 }
+type ComplexSelect struct {
+	Alias          string
+	FieldName      string
+	AggregateField *Aggregate
+	CaseStatement  *CaseField
+	StaticValue    string
+}
+
+func (c *ComplexSelect) String() string {
+	buff := bytes.Buffer{}
+	if c.FieldName != "" {
+		buff.WriteString(c.FieldName)
+	} else if c.AggregateField != nil {
+		buff.WriteString(c.AggregateField.String())
+	} else if c.CaseStatement != nil {
+		buff.WriteString(c.CaseStatement.String())
+	} else if c.StaticValue != "" {
+		buff.WriteString(c.StaticValue)
+	}
+	if c.Alias != "" {
+		buff.WriteString(" AS " + c.Alias)
+	}
+	return buff.String()
+}
+
 type CaseField struct {
 	Alias    string
 	WhenCond []WhenCond
@@ -78,6 +103,7 @@ func (w *WhenCond) String() string {
 type Aggregate struct {
 	AggregateType string
 	FieldName     string
+	Params        []Item
 }
 type SortField struct {
 	Field string
@@ -93,7 +119,14 @@ type TableAlias struct {
 }
 
 func (a *Aggregate) String() string {
-	return fmt.Sprintf("%s(%s)", a.AggregateType, a.FieldName)
+	buff := bytes.Buffer{}
+	buff.WriteString(a.AggregateType)
+	for _, par := range a.Params {
+		Lit := LiteralExpression{par.Token, par.Val}
+		buff.WriteString(Lit.String())
+	}
+
+	return buff.String() //fmt.Sprintf("%s(%s)", a.AggregateType, a.FieldName)
 }
 
 type JoinTables struct {
@@ -104,7 +137,11 @@ type JoinTables struct {
 
 func (s *SelectStatement) String() string {
 	out := &bytes.Buffer{}
-	out.WriteString("SELECT " + strings.Join(s.Fields, ", "))
+	selFields := []string{}
+	for _, cc := range s.ComplexSelects {
+		selFields = append(selFields, cc.String())
+	}
+	out.WriteString("SELECT " + strings.Join(selFields, ", "))
 	if s.TableName != "" {
 		out.WriteString("\n")
 		out.WriteString("FROM " + s.TableName)

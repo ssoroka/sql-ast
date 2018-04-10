@@ -16,6 +16,7 @@ const (
 	Time
 	Boolean
 	QuotedString
+	SinglQuotedString
 
 	// Operators
 	Equals
@@ -61,7 +62,9 @@ const (
 	ForUpdate
 	Join
 	LeftJoin
+	LeftOuterJoin
 	RightJoin
+	RightOuterJoin
 	InnerJoin
 	On
 	Null
