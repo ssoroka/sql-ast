@@ -118,6 +118,10 @@ func (i Item) Inspect() string {
 		tokenName = "When"
 	case End:
 		tokenName = "End"
+	case NotEqual:
+		tokenName = "NotEqual"
+	case SinglQuotedString:
+		tokenName = "SingleQuotedStr"
 	default:
 		tokenName = "Unknwon Token"
 	}

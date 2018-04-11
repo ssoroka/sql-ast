@@ -2,6 +2,7 @@ package sqlast
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 )
 
@@ -29,6 +30,7 @@ type SelectStatement struct {
 	SelectAl       []SelectAlias
 	ComplexSelects []ComplexSelect
 	TableName      string
+	ComplexFrom    ComplexTable
 	Where          Expression
 	Joins          []JoinTables
 	TableAl        []TableAlias
@@ -64,6 +66,26 @@ func (c *ComplexSelect) String() string {
 	}
 	if c.Alias != "" {
 		buff.WriteString(" AS " + c.Alias)
+	}
+	return buff.String()
+}
+
+type ComplexTable struct {
+	Alias     string
+	SubSelect *SelectStatement
+	TableName string
+}
+
+func (t *ComplexTable) String() string {
+	buff := bytes.Buffer{}
+	fmt.Println("Stringging ComplexTable")
+	if t.TableName != "" {
+		buff.WriteString(t.TableName)
+	} else {
+		buff.WriteString(fmt.Sprintf("(%s)", t.SubSelect.String()))
+	}
+	if t.Alias != "" {
+		buff.WriteString(" AS " + t.Alias)
 	}
 	return buff.String()
 }
@@ -142,9 +164,9 @@ func (s *SelectStatement) String() string {
 		selFields = append(selFields, cc.String())
 	}
 	out.WriteString("SELECT " + strings.Join(selFields, ", "))
-	if s.TableName != "" {
+	if s.ComplexFrom.TableName != "" || s.ComplexFrom.SubSelect != nil {
 		out.WriteString("\n")
-		out.WriteString("FROM " + s.TableName)
+		out.WriteString("FROM " + s.ComplexFrom.String()) //s.TableName)
 		if len(s.Joins) >= 0 {
 			for _, j := range s.Joins {
 				out.WriteString("\n\t" + j.JoinType + " " + j.TableName + " ON " + j.OnCondition.String())

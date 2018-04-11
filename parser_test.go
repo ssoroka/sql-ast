@@ -214,3 +214,36 @@ FROM MM`
 	}
 
 }
+func TestSelectFromComplex(t *testing.T) {
+	source := strings.NewReader("select table1.Field1 from (select ii as Field1,subfield2 as Field2 from mainTable where subfield2!='OO') as table1 ")
+	parser := NewParser(source)
+	selectStatement := Statement(&SelectStatement{})
+	err := parser.Parse(&selectStatement)
+	if err != nil {
+		t.Fail()
+		fmt.Println(err.Error())
+		return
+	}
+	pp := selectStatement.(*SelectStatement)
+	if len(pp.ComplexSelects) != 1 {
+		t.Error("Failed to parse select")
+		t.Fail()
+		return
+	}
+	if pp.ComplexFrom.SubSelect == nil {
+		t.Error("Failed to parse subQuery")
+		t.Fail()
+		return
+	}
+
+	outputSubString := `SELECT ii AS Field1, subfield2 AS Field2
+FROM mainTable
+WHERE
+	subfield2 != 'OO'`
+	if outputSubString != pp.ComplexFrom.SubSelect.String() {
+		t.Errorf("Output is Different, Expecting %s but got %s instead", outputSubString, pp.ComplexFrom.SubSelect.String())
+		t.Fail()
+		return
+	}
+	t.Log(pp.String())
+}

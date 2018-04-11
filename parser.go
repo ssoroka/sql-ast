@@ -110,6 +110,7 @@ detectAliasLoop:
 		if nextItem.Token == Identifier {
 			newAlias := TableAlias{item.Val, nextItem.Val}
 			result.TableAl = append(result.TableAl, newAlias)
+			return true
 		} else {
 		identifierLookup:
 			for {
@@ -120,6 +121,7 @@ detectAliasLoop:
 				case Identifier:
 					newAlias := TableAlias{item.Val, ii.Val}
 					result.TableAl = append(result.TableAl, newAlias)
+					return true
 					break identifierLookup
 				default:
 					p.unscan()
@@ -218,10 +220,34 @@ func (p *Parser) parseCase(result *SelectStatement, alias string) error {
 	}
 }
 
+type SubParser struct {
+	items    []Item
+	curIndex int
+}
+
+func (s *SubParser) nextItem() Item {
+	i := s.items[s.curIndex]
+	s.curIndex++
+	return i
+}
+func (s *SubParser) unScan() {
+	if s.curIndex > 0 {
+		s.curIndex--
+	}
+}
+
 // Parse parses the tokens provided by a scanner (lexer) into an AST
 func (p *Parser) Parse(result *Statement) error {
 	statement := &SelectStatement{}
 	_ = "breakpoint"
+	parentCountSub := 0
+	isASubQuery := false
+	if item := p.nextItem(); item.Token == ParenOpen {
+		parentCountSub++
+		isASubQuery = true
+	} else {
+		p.unscan()
+	}
 	if item := p.nextItem(); item.Token != Select {
 		return fmt.Errorf("found %v, expected SELECT", item.Inspect())
 	}
@@ -231,6 +257,18 @@ func (p *Parser) Parse(result *Statement) error {
 		item := p.nextItem()
 		fmt.Println("item", item)
 		switch item.Token {
+		case ParenOpen:
+			if isASubQuery {
+				parentCountSub++
+			}
+		case ParenClose:
+			if isASubQuery {
+				parentCountSub--
+				if parentCountSub == 0 {
+					*result = Statement(statement)
+					return nil
+				}
+			}
 		case Identifier, Asterisk, Number:
 
 			statement.Fields = append(statement.Fields, item.Val)
@@ -357,15 +395,52 @@ func (p *Parser) Parse(result *Statement) error {
 	}
 
 	item := p.nextItem()
-	if item.Token != Identifier {
+	if item.Token == Identifier {
+		statement.TableName = item.Val
+		pTable := Item{}
+		pTable.Token = Identifier
+		pTable.Val = item.Val
+		complexTable := ComplexTable{}
+		if p.DetectTableAlias(statement, pTable) {
+			complexTable.Alias = statement.TableAl[len(statement.TableAl)-1].Alias
+		}
+		complexTable.TableName = item.Val
+		statement.ComplexFrom = complexTable
+	} else if item.Token == ParenOpen { //complexTable Found
+		p.unscan()
+		var newSubStatement Statement
+		e := p.Parse(&newSubStatement)
+		if e != nil {
+			return e
+		}
+		pTable := Item{}
+		pTable.Token = Identifier
+		complexTable := ComplexTable{}
+		if p.DetectTableAlias(statement, pTable) {
+			complexTable.Alias = statement.TableAl[len(statement.TableAl)-1].Alias
+		}
+
+		complexTable.SubSelect = (newSubStatement.(*SelectStatement))
+		statement.ComplexFrom = complexTable
+	} else {
 		return fmt.Errorf("found %v, expected table name", item.Inspect())
 	}
-	statement.TableName = item.Val
-	pTable := Item{}
-	pTable.Token = Identifier
-	pTable.Val = item.Val
-	p.DetectTableAlias(statement, pTable)
-	if item := p.nextItem(); item.Token == Join || item.Token == LeftJoin || item.Token == RightJoin || item.Token == InnerJoin {
+
+	if item := p.nextItem(); item.Token == ParenClose {
+		if isASubQuery {
+			parentCountSub--
+			if parentCountSub == 0 {
+				*result = Statement(statement)
+				fmt.Println("Return after Selecting Table")
+				return nil
+			}
+		}
+	} else {
+		p.unscan()
+	}
+
+	if item := p.nextItem(); item.Token == Join || item.Token == LeftJoin || item.Token == RightJoin || item.Token == InnerJoin ||
+		item.Token == RightOuterJoin || item.Token == LeftOuterJoin {
 		//fmt.Println("Join Found")
 		p.unscan()
 		ll := 0
@@ -396,9 +471,32 @@ func (p *Parser) Parse(result *Statement) error {
 		p.unscan()
 	}
 
+	if item := p.nextItem(); item.Token == ParenClose {
+		if isASubQuery {
+			parentCountSub--
+			if parentCountSub == 0 {
+				*result = Statement(statement)
+				return nil
+			}
+		}
+	} else {
+		p.unscan()
+	}
+
 	var err error
 	if err = p.parseConditional(&statement.Where); err != nil {
 		return err
+	}
+	if item := p.nextItem(); item.Token == ParenClose {
+		if isASubQuery {
+			parentCountSub--
+			if parentCountSub == 0 {
+				*result = Statement(statement)
+				return nil
+			}
+		}
+	} else {
+		p.unscan()
 	}
 nextOption:
 	for {
@@ -412,6 +510,14 @@ nextOption:
 			p.parseExpression(&statement.Having)
 		case OrderBy:
 
+		case ParenClose:
+			if isASubQuery {
+				parentCountSub--
+				if parentCountSub == 0 {
+					*result = Statement(statement)
+					return nil
+				}
+			}
 		case EOF:
 			break nextOption
 		}
@@ -420,6 +526,7 @@ nextOption:
 	*result = Statement(statement)
 	return nil
 }
+
 func (p *Parser) parseOrderBy(result *[]SortField) error {
 	var curField SortField
 	for {
@@ -575,6 +682,7 @@ func (p *Parser) parseExpression(result *Expression) error {
 	items := []Item{}
 	done := false
 	// depth := 0
+	parentCount := 0 //parenthesis count
 	for !done {
 		// see if we're done and we hit a border token.
 		item := p.scan()
@@ -598,13 +706,21 @@ func (p *Parser) parseExpression(result *Expression) error {
 		case On:
 			continue
 		case Whitespace:
-
+		case ParenOpen:
+			parentCount++
+		case ParenClose:
+			parentCount--
+			if parentCount < 0 {
+				p.unscan()
+				done = true
+				break
+			}
 		default:
 			fmt.Println("Parser Warning: Unhandled token", item.Inspect())
 		}
 		if item.Token != Where && item.Token != On && item.Token != Join &&
 			item.Token != LeftJoin && item.Token != RightJoin && item.Token != RightOuterJoin && item.Token != LeftOuterJoin &&
-			item.Token != InnerJoin && item.Token != OrderBy && item.Token != GroupBy && item.Token != Then {
+			item.Token != InnerJoin && item.Token != OrderBy && item.Token != GroupBy && item.Token != Then && !(item.Token == ParenClose && parentCount < 0) {
 			items = append(items, item)
 		}
 
@@ -651,7 +767,7 @@ func (p *Parser) parseExpression(result *Expression) error {
 // parseSubExpression is called when we know we have an expression.
 func parseSubExpression(result *Expression, items []Item) error {
 	items = withoutWhitespace(items)
-	// fmt.Println("Processing this", items, len(items))
+	fmt.Println("Processing this", items, len(items))
 	// fmt.Println(items[0], items[len(items)-1])
 	// strip parens if start and ends with parens
 	if len(items) >= 3 && items[0].Token == ParenOpen && items[len(items)-1].Token == ParenClose {
@@ -699,7 +815,7 @@ func parseSubExpression(result *Expression, items []Item) error {
 	// detect the type of expression.
 	if len(items) == 1 { // handle the simple case where we only have one element.
 		switch items[0].Token {
-		case Number, QuotedString, Boolean, Identifier, Null:
+		case Number, QuotedString, Boolean, Identifier, Null, SinglQuotedString:
 			*result = &LiteralExpression{Token: items[0].Token, Val: items[0].Val}
 			return nil
 		}
