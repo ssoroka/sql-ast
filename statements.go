@@ -154,9 +154,26 @@ func (a *Aggregate) String() string {
 type JoinTables struct {
 	JoinType    string
 	TableName   string
+	SubSelect   *SelectStatement
+	Alias       string
 	OnCondition Expression
 }
 
+func (j *JoinTables) String() string {
+	buff := bytes.Buffer{}
+	buff.WriteString(j.JoinType)
+	if j.TableName != "" {
+		buff.WriteString(" " + j.TableName)
+	} else {
+		buff.WriteString(" (" + j.SubSelect.String() + ")")
+	}
+	if j.Alias != "" {
+		buff.WriteString(" AS " + j.Alias)
+	}
+	buff.WriteString(" ON " + j.OnCondition.String())
+	fmt.Println("Stringger", buff.String())
+	return buff.String()
+}
 func (s *SelectStatement) String() string {
 	out := &bytes.Buffer{}
 	selFields := []string{}
@@ -169,7 +186,7 @@ func (s *SelectStatement) String() string {
 		out.WriteString("FROM " + s.ComplexFrom.String()) //s.TableName)
 		if len(s.Joins) >= 0 {
 			for _, j := range s.Joins {
-				out.WriteString("\n\t" + j.JoinType + " " + j.TableName + " ON " + j.OnCondition.String())
+				out.WriteString("\n\t" + j.String())
 			}
 
 		}

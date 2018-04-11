@@ -457,12 +457,12 @@ func (p *Parser) Parse(result *Statement) error {
 				break JoinLoop
 			case Join, LeftJoin, RightJoin, InnerJoin:
 				newJoinStatement := &JoinTables{}
-				newJoinStatement.JoinType = item.String()
+				newJoinStatement.JoinType = item.Val
 				e := p.parseJoin(newJoinStatement, statement)
 				if e != nil {
 					return e
 				}
-				if newJoinStatement.TableName != "" {
+				if newJoinStatement.TableName != "" || newJoinStatement.SubSelect != nil {
 					statement.Joins = append(statement.Joins, *newJoinStatement)
 				}
 			}
@@ -637,31 +637,50 @@ AggrLoop:
 // parseJoin detects the "JOIN" clause and processes it, if any.
 func (p *Parser) parseJoin(result *JoinTables, statement *SelectStatement) error {
 	// retrieve table name
+	var e error
 	tableName := p.nextItem()
-	pTable := Item{}
-	pTable.Token = Identifier
-	pTable.Val = tableName.Val
-	p.DetectTableAlias(statement, pTable)
-	result.TableName = tableName.Val
-	// retrieve on field
-	onCond := p.nextItem()
-	fmt.Println("TableName", result.TableName, onCond.Val)
+	if tableName.Token == Identifier {
+		pTable := Item{}
+		pTable.Token = Identifier
+		pTable.Val = tableName.Val
+		if p.DetectTableAlias(statement, pTable) {
+			result.Alias = statement.TableAl[len(statement.TableAl)-1].Alias
+		}
+		result.TableName = tableName.Val
+		// retrieve on field
+		onCond := p.nextItem()
+		fmt.Println("TableName", result.TableName, onCond.Val)
 
-	if onCond.Token != On {
-		fmt.Errorf("Expected on, but found %s instead", onCond)
+		if onCond.Token != On {
+			fmt.Errorf("Expected on, but found %s instead", onCond)
+			p.unscan()
+			return errors.New(fmt.Sprintf("found %v, expected field", onCond.Inspect())) //fmt.Errorf("found %v, expected field", item.Inspect())
+		} else {
+			p.unscan()
+		}
+		//fmt.Println("Parsing Expression")
+		// ok, we have a where statement.
+		adad := &(result.OnCondition)
+		e = p.parseExpression(adad)
+	} else if tableName.Token == ParenOpen {
+		fmt.Println("Complex Join Found")
 		p.unscan()
-		return errors.New(fmt.Sprintf("found %v, expected field", onCond.Inspect())) //fmt.Errorf("found %v, expected field", item.Inspect())
-	} else {
-		p.unscan()
+		var subStatement Statement
+		e = p.Parse(&subStatement)
+		if e != nil {
+			return e
+		}
+		pTable := Item{}
+		pTable.Token = Identifier
+		pTable.Val = tableName.Val
+		if p.DetectTableAlias(statement, pTable) {
+			result.Alias = statement.TableAl[len(statement.TableAl)-1].Alias
+		}
+		result.SubSelect = subStatement.(*SelectStatement)
+		adad := &(result.OnCondition)
+		e = p.parseExpression(adad)
 	}
-	//fmt.Println("Parsing Expression")
-	// ok, we have a where statement.
-	adad := &(result.OnCondition)
-	e := p.parseExpression(adad)
-	//fmt.Println("adad", *adad)
-	// if e != nil {
-	// 	fmt.Println("error parse join condition", e.Error())
-	// }
+
 	return e
 }
 

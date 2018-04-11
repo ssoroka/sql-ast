@@ -247,3 +247,20 @@ WHERE
 	}
 	t.Log(pp.String())
 }
+func TestSelectJoinComplex(t *testing.T) {
+	source := strings.NewReader("select table1.Field1 from table1 right join (select ii as Field1,subfield2 as Field2 from mainTable where subfield2!='OO') as k on table1.field1=k.field4")
+	parser := NewParser(source)
+	selectStatement := Statement(&SelectStatement{})
+	err := parser.Parse(&selectStatement)
+	if err != nil {
+		t.Fail()
+		fmt.Println(err.Error())
+		return
+	}
+	pp := selectStatement.(*SelectStatement)
+	if len(pp.Joins) != 1 {
+		t.Fail()
+		t.Error("Parsing Join Error")
+	}
+	t.Log(pp)
+}
