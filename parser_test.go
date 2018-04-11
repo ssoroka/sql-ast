@@ -264,3 +264,21 @@ func TestSelectJoinComplex(t *testing.T) {
 	}
 	t.Log(pp)
 }
+func TestSelectOrderBy(t *testing.T) {
+	source := strings.NewReader("select table1.Field1 from table1 order by field3 asc,field4 desc")
+	parser := NewParser(source)
+	selectStatement := Statement(&SelectStatement{})
+	err := parser.Parse(&selectStatement)
+	if err != nil {
+		t.Fail()
+		fmt.Println(err.Error())
+		return
+	}
+	pp := selectStatement.(*SelectStatement)
+	if len(pp.OrderBy) != 2 {
+		t.Error("Failed to parse Order By")
+		t.Fail()
+	}
+	t.Log(pp.OrderBy)
+	t.Log(pp)
+}

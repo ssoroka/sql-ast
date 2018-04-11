@@ -96,7 +96,9 @@ func (s *Scanner) unread() {
 // otherwise readToken returns true and saves the value to lastReadToken.
 func (s *Scanner) tryReadToken(token string) bool {
 	log.Println("tryReadToken", token)
-
+	if token == "ASC" {
+		fmt.Println("Try read asc", token)
+	}
 	readRunes := &bytes.Buffer{}
 	for i := 0; i < len(token); i++ {
 		r := s.read()
@@ -118,11 +120,8 @@ func (s *Scanner) tryReadToken(token string) bool {
 			return true
 		}
 	}
-	if !isWhitespace(r) && !isParenthesis(r) && r != eof {
+	if !isWhitespace(r) && !isParenthesis(r) && !(r == ',') && r != eof {
 		s.unreadString(readRunes.String())
-		if token == "SUM" {
-			fmt.Println("Failed read SUM,", !isParenthesis(r))
-		}
 		return false
 	}
 	s.lastReadToken = readRunes.String()

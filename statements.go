@@ -203,5 +203,13 @@ func (s *SelectStatement) String() string {
 		out.WriteString("\nHaving\n\t")
 		out.WriteString(s.Having.String())
 	}
+	if len(s.OrderBy) > 0 {
+		oo := []string{}
+		for _, i := range s.OrderBy {
+			oo = append(oo, i.Field+" "+i.Sort)
+		}
+		out.WriteString("\nOrder By\n\t")
+		out.WriteString(strings.Join(oo, ","))
+	}
 	return out.String()
 }

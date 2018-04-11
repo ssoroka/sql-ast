@@ -501,6 +501,7 @@ func (p *Parser) Parse(result *Statement) error {
 nextOption:
 	for {
 		item := p.nextItem()
+		fmt.Println(item)
 		switch item.Token {
 		case Whitespace:
 			continue
@@ -509,7 +510,7 @@ nextOption:
 		case Having:
 			p.parseExpression(&statement.Having)
 		case OrderBy:
-
+			p.parseOrderBy(&statement.OrderBy)
 		case ParenClose:
 			if isASubQuery {
 				parentCountSub--
@@ -529,8 +530,10 @@ nextOption:
 
 func (p *Parser) parseOrderBy(result *[]SortField) error {
 	var curField SortField
+	fmt.Println("Parse Orderby")
 	for {
 		item := p.nextItem()
+		fmt.Println(item)
 		switch item.Token {
 		case Whitespace:
 			continue
@@ -545,8 +548,9 @@ func (p *Parser) parseOrderBy(result *[]SortField) error {
 			if curField.Sort != "" {
 				return errors.New("Sort order duplicateFound, expected comma")
 			}
-		case Comma:
+			curField.Sort = item.Val
 			*result = append(*result, curField)
+		case Comma:
 			curField = SortField{}
 		}
 	}
