@@ -356,6 +356,15 @@ func (s *Scanner) tryKeywords() bool {
 	} else if s.tryReadToken("COUNT") {
 		s.lastReadItem = Item{Count, s.lastReadToken}
 		return true
+	} else if s.tryReadToken("ROW_NUMBER") {
+		s.lastReadItem = Item{RowNum, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("OVER") {
+		s.lastReadItem = Item{Over, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("PARTITION BY") {
+		s.lastReadItem = Item{PartitionBy, s.lastReadToken}
+		return true
 	} else if s.tryReadToken("CONCAT") {
 		s.lastReadItem = Item{Concat, s.lastReadToken}
 		return true

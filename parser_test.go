@@ -309,3 +309,21 @@ Order By
 		return
 	}
 }
+func TestRowNumOver(t *testing.T) {
+	source := strings.NewReader("select riskcode, masterno , row_number() over (partition by masterno order by seqno desc) as max_row from PREFIX2_RSKIND RSKND")
+	parser := NewParser(source)
+	selectStatement := Statement(&SelectStatement{})
+	err := parser.Parse(&selectStatement)
+	if err != nil {
+		t.Fail()
+		fmt.Println(err.Error())
+		return
+	}
+	pp := selectStatement.(*SelectStatement)
+	if len(pp.ComplexSelects) != 3 {
+		t.Fail()
+		fmt.Println(err.Error())
+		return
+	}
+	t.Log(pp)
+}

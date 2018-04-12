@@ -84,6 +84,11 @@ const (
 	Max
 	Min
 	Concat
+
+	// SqlServer specific keyword, for now
+	RowNum
+	Over
+	PartitionBy
 )
 
 var literals = []Token{Identifier, Number, Date, Time, Boolean, QuotedString}

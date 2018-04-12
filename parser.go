@@ -284,13 +284,33 @@ func (p *Parser) Parse(result *Statement) error {
 			newComplexSelect := ComplexSelect{}
 			newComplexSelect.FieldName = "*"
 			statement.ComplexSelects = append(statement.ComplexSelects, newComplexSelect)
-		case Count, Avg, Min, Max, Sum, Concat:
+		case Count, Avg, Min, Max, Sum, Concat, RowNum:
 			p.unscan()
 			ag := Aggregate{}
 			e := p.parseAggregate(&ag)
 			if e != nil {
 				return e
 			}
+			if item.Token == RowNum {
+				nextToken := p.nextItem()
+				if nextToken.Token == Over {
+					ag.Params = append(ag.Params, nextToken)
+				RowNumOverLoop:
+					for {
+						nextToken = p.nextItem()
+						switch nextToken.Token {
+						case ParenClose:
+							ag.Params = append(ag.Params, nextToken)
+							break RowNumOverLoop
+						default:
+							ag.Params = append(ag.Params, nextToken)
+						}
+					}
+				} else {
+					p.unscan()
+				}
+			}
+			fmt.Println(len(ag.Params), ag.Params)
 			statement.Aggregates = append(statement.Aggregates, ag)
 			statement.Fields = append(statement.Fields, ag.String())
 			pItem := Item{item.Token, ag.String()}

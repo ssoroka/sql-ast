@@ -144,6 +144,16 @@ func (le *LiteralExpression) String() string {
 		return "NULL"
 	case Identifier:
 		return le.Val
+	case Over:
+		return "Over "
+	case OrderBy:
+		return "Order By "
+	case PartitionBy:
+		return "Partition By "
+	case Asc:
+		return "Asc "
+	case Desc:
+		return "Desc "
 	default:
 		panic("can't handle literal expression token type: " + fmt.Sprintf("%d %s", le.Token, le.Val))
 	}
