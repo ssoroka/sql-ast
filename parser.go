@@ -284,7 +284,7 @@ func (p *Parser) Parse(result *Statement) error {
 			newComplexSelect := ComplexSelect{}
 			newComplexSelect.FieldName = "*"
 			statement.ComplexSelects = append(statement.ComplexSelects, newComplexSelect)
-		case Count, Avg, Min, Max, Sum:
+		case Count, Avg, Min, Max, Sum, Concat:
 			p.unscan()
 			ag := Aggregate{}
 			e := p.parseAggregate(&ag)
@@ -610,6 +610,8 @@ AggrLoop:
 			result.FieldName = item.Val
 			result.Params = append(result.Params, item)
 		case Comma:
+			result.Params = append(result.Params, item)
+		default:
 			result.Params = append(result.Params, item)
 		}
 

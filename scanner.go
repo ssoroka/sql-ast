@@ -3,7 +3,6 @@ package sqlast
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -96,9 +95,9 @@ func (s *Scanner) unread() {
 // otherwise readToken returns true and saves the value to lastReadToken.
 func (s *Scanner) tryReadToken(token string) bool {
 	log.Println("tryReadToken", token)
-	if token == "ASC" {
-		fmt.Println("Try read asc", token)
-	}
+	// if token == "ASC" {
+	// 	fmt.Println("Try read asc", token)
+	// }
 	readRunes := &bytes.Buffer{}
 	for i := 0; i < len(token); i++ {
 		r := s.read()
@@ -356,6 +355,9 @@ func (s *Scanner) tryKeywords() bool {
 		return true
 	} else if s.tryReadToken("COUNT") {
 		s.lastReadItem = Item{Count, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("CONCAT") {
+		s.lastReadItem = Item{Concat, s.lastReadToken}
 		return true
 	} else if s.tryReadToken("HAVING") {
 		s.lastReadItem = Item{Having, s.lastReadToken}

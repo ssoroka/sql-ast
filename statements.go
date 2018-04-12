@@ -78,7 +78,6 @@ type ComplexTable struct {
 
 func (t *ComplexTable) String() string {
 	buff := bytes.Buffer{}
-	fmt.Println("Stringging ComplexTable")
 	if t.TableName != "" {
 		buff.WriteString(t.TableName)
 	} else {
@@ -171,7 +170,6 @@ func (j *JoinTables) String() string {
 		buff.WriteString(" AS " + j.Alias)
 	}
 	buff.WriteString(" ON " + j.OnCondition.String())
-	fmt.Println("Stringger", buff.String())
 	return buff.String()
 }
 func (s *SelectStatement) String() string {

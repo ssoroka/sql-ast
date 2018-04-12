@@ -282,3 +282,30 @@ func TestSelectOrderBy(t *testing.T) {
 	t.Log(pp.OrderBy)
 	t.Log(pp)
 }
+func TestSelectConcat(t *testing.T) {
+	source := strings.NewReader("select Concat('PP',\"AFK\") from table1 order by field3 asc,field4 desc")
+	parser := NewParser(source)
+	selectStatement := Statement(&SelectStatement{})
+	err := parser.Parse(&selectStatement)
+	if err != nil {
+		t.Fail()
+		fmt.Println(err.Error())
+		return
+	}
+	pp := selectStatement.(*SelectStatement)
+	if len(pp.ComplexSelects) != 1 {
+		t.Error("Failed to parse Select")
+		t.Fail()
+		return
+	}
+	t.Log(pp)
+	output := `SELECT Concat('PP',"AFK")
+FROM table1
+Order By
+	field3 asc,field4 desc`
+	if output != pp.String() {
+		t.Errorf("Output is Different, Expecting %s but got %s instead", output, pp.String())
+		t.Fail()
+		return
+	}
+}

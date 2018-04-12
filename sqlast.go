@@ -83,6 +83,7 @@ const (
 	Count
 	Max
 	Min
+	Concat
 )
 
 var literals = []Token{Identifier, Number, Date, Time, Boolean, QuotedString}
