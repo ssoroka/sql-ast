@@ -5,6 +5,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	tk "github.com/eaciit/toolkit"
 )
 
 func TestParse(t *testing.T) {
@@ -71,7 +73,7 @@ func TestGroupByHaving(t *testing.T) {
 	}
 }
 func TestAliasField(t *testing.T) {
-	source := strings.NewReader("select sum(table1.field1) as v1,avg(table2.field2) v2,table2.field2 b2 from table1 where table1.field1>=20 Group by table1.field12,table1.field10 having table1.field2<=10")
+	source := strings.NewReader("select table1.field1, sum(table1.field1) as v1,avg(table2.field2) v2,table2.field2 b2 from table1 where table1.field1>=20 Group by table1.field12,table1.field10 having table1.field2<=10")
 	parser := NewParser(source)
 	//var selectStatement ast.Statement
 	selectStatement := Statement(&SelectStatement{})
@@ -80,7 +82,7 @@ func TestAliasField(t *testing.T) {
 		fmt.Println(err.Error())
 		os.Exit(-1)
 	}
-	output := `SELECT sum(table1.field1) AS v1, avg(table2.field2) AS v2, table2.field2 AS b2
+	output := `SELECT table1.field1, sum(table1.field1) AS v1, avg(table2.field2) AS v2, table2.field2 AS b2
 FROM table1
 WHERE
 	table1.field1 >= 20
@@ -93,11 +95,14 @@ Having
 		t.Fail()
 		t.Errorf("Failed to parse alias field ")
 	}
-	if len(pp.ComplexSelects) != 3 {
+	if len(pp.ComplexSelects) != 4 {
 		t.Fail()
 		t.Errorf("Failed to parse alias field Content of SelectAl %s content of Aggregates %s", pp.SelectAl, pp.Aggregates)
 
 	}
+	t.Log("AAA1", tk.JsonString(pp.ComplexSelects[0]))
+	t.Log("AAA2", tk.JsonString(pp.ComplexSelects[1]))
+	t.Log("AAA3", tk.JsonString(pp.ComplexSelects[2]))
 	if pp.String() != output {
 		t.Errorf("Output is Different, Expecting %s but got %s instead", output, pp.String())
 		t.Fail()
@@ -119,6 +124,7 @@ func TestAliasTable(t *testing.T) {
 		t.Fail()
 		t.Errorf("Failed to parse alias table")
 	}
+	t.Log("AA", tk.JsonString(pp))
 	t.Log(pp.TableAl)
 }
 func TestCaseSelect1(t *testing.T) {
@@ -143,7 +149,8 @@ func TestCaseSelect1(t *testing.T) {
 		t.Fail()
 		t.Errorf("Failed to parse CASE condition")
 	}
-	t.Log(pp.CaseFields)
+	t.Log(tk.JsonString(pp.CaseFields))
+	t.Log(tk.JsonString(pp.ComplexSelects))
 	if len(pp.ComplexSelects) != 3 {
 		t.Fail()
 		t.Errorf("Failed to correctly detect fields")
@@ -154,7 +161,7 @@ func TestCaseSelect2(t *testing.T) {
 	query := `SELECT
 	player_name,
 	year,
-	CASE WHEN year = "SR" THEN "yes" ELSE NULL END is_a_senior
+	CASE WHEN year = "SR" AND year<50 THEN "yes" ELSE NULL END is_a_senior
   FROM
 	benn.college_football_players
   `
@@ -168,7 +175,8 @@ func TestCaseSelect2(t *testing.T) {
 		os.Exit(-1)
 	}
 	output := `SELECT player_name, year, CASE
-	WHEN year = "SR" THEN "yes"
+	WHEN year = "SR"
+	AND year < 50 THEN "yes"
 	 ELSE NULL
 END
  AS is_a_senior
@@ -178,7 +186,7 @@ FROM benn.college_football_players`
 		t.Fail()
 		t.Errorf("Failed to parse CASE condition")
 	}
-	t.Log(pp.CaseFields)
+	t.Log(tk.JsonString(pp.ComplexSelects[2].CaseStatement))
 	if len(pp.ComplexSelects) != 3 {
 		t.Fail()
 		t.Errorf("Failed to correctly detect fields")
@@ -298,7 +306,7 @@ func TestSelectConcat(t *testing.T) {
 		t.Fail()
 		return
 	}
-	t.Log(pp)
+	t.Log("concat", tk.JsonString(pp.ComplexSelects))
 	output := `SELECT Concat('PP',"AFK")
 FROM table1
 Order By

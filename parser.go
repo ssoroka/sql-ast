@@ -764,7 +764,7 @@ func (p *Parser) parseExpression(result *Expression) error {
 			fmt.Println("Parser Warning: Unhandled token", item.Inspect())
 		}
 		if item.Token != Where && item.Token != On && item.Token != Join &&
-			item.Token != LeftJoin && item.Token != RightJoin && item.Token != RightOuterJoin && item.Token != LeftOuterJoin &&
+			item.Token != LeftJoin && item.Token != RightJoin && item.Token != RightOuterJoin && item.Token != LeftOuterJoin && item.Token != Having &&
 			item.Token != InnerJoin && item.Token != OrderBy && item.Token != GroupBy && item.Token != Then && !(item.Token == ParenClose && parentCount < 0) {
 			items = append(items, item)
 		}
