@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"io"
-	"io/ioutil"
 	"log"
 	"strings"
 	"unicode/utf8"
@@ -13,7 +12,7 @@ import (
 var eof = rune(0)
 
 func init() {
-	log.SetOutput(ioutil.Discard)
+	//log.SetOutput(ioutil.Discard)
 }
 
 // Scanner (aka lexer) takes a string of text and pulls tokens out of it.
