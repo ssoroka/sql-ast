@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"io"
+	"log"
 	"strings"
 	"unicode/utf8"
 )
@@ -39,19 +40,19 @@ func (s *Scanner) read() rune {
 		if err != nil {
 			panic(err)
 		}
-		//log.Println("buf.ReadRune", string(r))
+		log.Println("buf.ReadRune", string(r))
 		s.lastReadRune = r
 		return r
 	}
 	s.buf.Truncate(0) // need to get rid of back buffer
 	r, _, err := s.r.ReadRune()
-	//log.Println("s.r.ReadRune", string(r))
+	log.Println("s.r.ReadRune", string(r))
 	s.lastReadRune = r
 	if err == io.EOF {
 		return eof
 	}
 	if err != nil {
-		//log.Println("Error reading rune:", err)
+		log.Println("Error reading rune:", err)
 		panic(err)
 	}
 	return r
@@ -66,16 +67,16 @@ func (s *Scanner) peek() rune {
 
 // unread places the previously read rune back on the reader.
 func (s *Scanner) unread() {
-	//log.Println("buf.UnreadRune (pre) is ", s.buf.String(), s.buf.Len())
+	log.Println("buf.UnreadRune (pre) is ", s.buf.String(), s.buf.Len())
 	if err := s.buf.UnreadRune(); err == nil {
-		//log.Println("buf.UnreadRune", string(s.lastReadRune))
-		//log.Println("buf.UnreadRune is ", s.buf.String(), s.buf.Len())
+		log.Println("buf.UnreadRune", string(s.lastReadRune))
+		log.Println("buf.UnreadRune is ", s.buf.String(), s.buf.Len())
 		return
 	} else if s.buf.Len() == 0 {
-		//log.Println("buf.WriteRune", string(s.lastReadRune))
+		log.Println("buf.WriteRune", string(s.lastReadRune))
 		s.buf.WriteRune(s.lastReadRune)
 	} else {
-		//log.Println("NewBuf", string(s.lastReadRune))
+		log.Println("NewBuf", string(s.lastReadRune))
 		// stuff in buffer and can't unread rune.
 		newBuf := &bytes.Buffer{}
 		newBuf.WriteRune(s.lastReadRune)
@@ -92,7 +93,7 @@ func (s *Scanner) unread() {
 // If the next few bytes are not equal to s, all read bytes are unread and readToken returns false.
 // otherwise readToken returns true and saves the value to lastReadToken.
 func (s *Scanner) tryReadToken(token string) bool {
-	//log.Println("tryReadToken", token)
+	log.Println("tryReadToken", token)
 	// if token == "ASC" {
 	// 	fmt.Println("Try read asc", token)
 	// }
@@ -126,7 +127,7 @@ func (s *Scanner) tryReadToken(token string) bool {
 }
 
 func (s *Scanner) unreadString(str string) {
-	//log.Println("unreadString", str)
+	log.Println("unreadString", str)
 	if s.buf.Len() == 0 {
 		s.buf.WriteString(str)
 	} else {
@@ -302,7 +303,7 @@ func isWhitespace(ch rune) bool {
 }
 
 func isLetter(ch rune) bool {
-	return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')
+	return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '@'
 }
 
 func isDigit(ch rune) bool {
@@ -330,6 +331,9 @@ func (s *Scanner) tryKeywords() bool {
 	if s.tryReadToken("SELECT") {
 		s.lastReadItem = Item{Select, s.lastReadToken}
 		return true
+	} else if s.tryReadToken("FROM_UNIXTIME") {
+		s.lastReadItem = Item{From_unixtime, s.lastReadToken}
+		return true
 	} else if s.tryReadToken("FROM") {
 		s.lastReadItem = Item{From, s.lastReadToken}
 		return true
@@ -344,6 +348,15 @@ func (s *Scanner) tryKeywords() bool {
 		return true
 	} else if s.tryReadToken("AVG") {
 		s.lastReadItem = Item{Avg, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("NVL") {
+		s.lastReadItem = Item{Nvl, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("TRIM") {
+		s.lastReadItem = Item{Trim, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("UNIX_TIMESTAMP") {
+		s.lastReadItem = Item{Unix_timestamp, s.lastReadToken}
 		return true
 	} else if s.tryReadToken("MIN") {
 		s.lastReadItem = Item{Min, s.lastReadToken}
@@ -454,7 +467,6 @@ func (s *Scanner) tryOperands() bool {
 		s.lastReadItem = Item{GreaterThan, s.lastReadToken}
 		return true
 	} else if s.tryReadToken("=") {
-
 		s.lastReadItem = Item{Equals, s.lastReadToken}
 		return true
 	} else if s.tryReadToken("!=") {
@@ -483,7 +495,6 @@ func (s *Scanner) tryOperands() bool {
 		return true
 	} else if s.tryReadToken("IS NOT") {
 		s.lastReadItem = Item{IsNot, s.lastReadToken}
-
 		return true
 	} else if s.tryReadToken("IS") {
 		s.lastReadItem = Item{Is, s.lastReadToken}

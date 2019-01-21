@@ -154,6 +154,18 @@ func (le *LiteralExpression) String() string {
 		return "Asc "
 	case Desc:
 		return "Desc "
+	case Unix_timestamp:
+		return "Unix_timestamp"
+	case From_unixtime:
+		return "From_unixtime"
+	case As:
+		return "As"
+	case Nvl:
+		return "NVL"
+	case Concat:
+		return "Concat"
+	case Trim:
+		return "Trim"
 	default:
 		panic("can't handle literal expression token type: " + fmt.Sprintf("%d %s", le.Token, le.Val))
 	}
@@ -194,7 +206,20 @@ func (ie *IdentifierExpression) String() string {
 	return ie.Name
 }
 
-type FunctionExpression struct{}
+type FunctionExpression struct {
+	FunctionName string
+	Parameters   []Item
+}
+
+func (f *FunctionExpression) String() string {
+	outString := f.FunctionName + "("
+	for _, p := range f.Parameters {
+		outString += p.Val
+	}
+	outString += ")"
+	return outString
+}
+
 type NotExpression struct{}
 type SubqueryExpression struct{}
 type ExistsExpression struct{}

@@ -286,7 +286,7 @@ func (p *Parser) Parse(result *Statement) error {
 			newComplexSelect := ComplexSelect{}
 			newComplexSelect.FieldName = "*"
 			statement.ComplexSelects = append(statement.ComplexSelects, newComplexSelect)
-		case Count, Avg, Min, Max, Sum, Concat, RowNum:
+		case Count, Avg, Min, Max, Sum, Concat, RowNum, Nvl, Trim, From_unixtime:
 			p.unscan()
 			ag := Aggregate{}
 			e := p.parseAggregate(&ag)
@@ -858,6 +858,7 @@ func parseSubExpression(result *Expression, items []Item) error {
 			return errors.New("Opening parenthesis without matching closing parenthesis: " + itemsString(items))
 		}
 	}
+	// we have a functional expression
 
 	// detect the type of expression.
 	if len(items) == 1 { // handle the simple case where we only have one element.
@@ -866,6 +867,21 @@ func parseSubExpression(result *Expression, items []Item) error {
 			*result = &LiteralExpression{Token: items[0].Token, Val: items[0].Val}
 			return nil
 		}
+	}
+	fmt.Println(len(items) > 1, items[1].Token == ParenOpen, items[len(items)-1].Token == ParenClose)
+	if len(items) > 1 && items[1].Token == ParenOpen && items[len(items)-1].Token == ParenClose {
+		parameters := []Item{}
+		for i, _ := range items {
+			if i == 0 || i == len(items)-1 {
+				continue
+			}
+			parameters = append(parameters, items[i])
+		}
+		*result = &FunctionExpression{
+			FunctionName: items[0].Val,
+			Parameters:   parameters,
+		}
+		return nil
 	}
 	//	if we only have 2 elements, we probably have a NOT or something.
 	// if we have 3 element and the middle is either comparator operator

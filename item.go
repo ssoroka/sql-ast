@@ -84,6 +84,10 @@ func (i Item) Inspect() string {
 
 	case Select:
 		tokenName = "Select"
+	case From_unixtime:
+		tokenName = "From_unixtime"
+	case Unix_timestamp:
+		tokenName = "UNIX_Timestamp"
 	case From:
 		tokenName = "From"
 	case Where:
@@ -108,6 +112,12 @@ func (i Item) Inspect() string {
 		tokenName = "Min"
 	case Count:
 		tokenName = "Count"
+	case Nvl:
+		tokenName = "NVL"
+	case Trim:
+		tokenName = "Trim"
+	case Concat:
+		tokenName = "Concat"
 	case As:
 		tokenName = "As"
 	case Case:

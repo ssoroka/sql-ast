@@ -84,6 +84,10 @@ const (
 	Max
 	Min
 	Concat
+	Nvl
+	From_unixtime
+	Trim
+	Unix_timestamp
 
 	// SqlServer specific keyword, for now
 	RowNum

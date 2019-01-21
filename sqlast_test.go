@@ -6,8 +6,7 @@ import (
 
 func TestSimpleSelect(t *testing.T) {
 	var ast Statement
-	err := Parse(&ast, `select *
-    from  some_table`)
+	err := Parse(&ast, `SELECT CASE blablabla from EBBS_GM_JOSSS`)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -57,7 +56,90 @@ WHERE
 		t.Error("Unexpected output, got", ast.String(), "expected", expectedOutput)
 	}
 }
-
+func TestSQL1(t *testing.T) {
+	var ast Statement
+	sql1 := `SELECT	
+	CASE	
+		WHEN b.party_id='' 
+		OR b.bank_group_code='' 
+		OR b.cty_code='' THEN '-1' 
+		ELSE NVL(CONCAT('OTP','-','@cntryCode','-',trim(b.party_id),'-',
+			trim(b.bank_group_code),'-',trim(b.cty_code)),'-1') 
+	END	as PRTY_SROGT_ID,customer_type as PRTY_TYPE_CD,'' as PRTY_SUB_TYPE_CD,
+			b.party_id as DOM_PRTY_HOST_NUM,'' as DOM_PRTY_HOST_NUM_TYPE,
+			PROFILE_STATUS as STS_CD,b.party_name as LEGAL_NM,'' as LONG_NM,
+			b.party_short_name as SHORT_NM,SCI_Pty_mst.legal_status_constitution as LEGAL_Constitution_CD,
+			SCI_Pty_mst.incorporation_no as INC_NUM,b.cty_code as DMCLE_CTRY_CD,
+			'' as BKRPT_DT,from_unixtime(unix_timestamp(cast(SCI_Pty_mst.incorporation_date as varchar(10)),
+			'yyyy-MM-dd'),'yyyy-MM-dd') as INCORPORATION_DT,'' as BSL_SEGMT,
+			business_division as BUSN_TYPE,industry_code as ISIC_CD,'' as ISIC_DESC,
+			'' as ISIC_STRT_DT,from_unixtime(unix_timestamp(cast(open_date as varchar(10)),
+			'yyyy-MM-dd'),'yyyy-MM-dd') as RL_STRT_DT,from_unixtime(unix_timestamp(cast(close_date as varchar(10)),
+			'yyyy-MM-dd'),'yyyy-MM-dd') as RL_END_DT,'' as DSCLS_AGMT_FL,
+			SCI_Pty_mst.scb_internal_crg as INTRNL_CR_GRADE,affiliate_code as AFFL_CD,
+			CONCAT('SCI','-','@cntryCode','-',nvl(concat(XREF.LSX_LE_ID,
+			'-',XREF.LSX_LSP_ID),SCI_Pty_mst.sci_le_id)) as ENTRP_PRTY_SROGT_ID,
+			nvl(concat(XREF.LSX_LE_ID,'-',XREF.LSX_LSP_ID),SCI_Pty_mst.sci_le_id) as ENTRP_PRTY_HOST_NUM,
+			sub_seg_code as SUB_SEGMT_CD,'' as SEGMT_CD_DESC,'' as SUB_SEGMT_CD_DESC,
+			'' as BSL_SEGMT_DESC,SCI_Pty_mst.legal_status_constitution_desc as LEGAL_Constitution_DESC,
+			'' as PRIM_PHN_NUM,'' as PRIM_EML_ADDR,'' as PRIM_FAX_NUM,'' as CDD_SYS_RISK_CD,
+			'' as CDD_RCMND_RISK_CD,SCI_Pty_mst.scb_internal_crg_desc as INTRNL_CR_GRADE_DESC,
+			'OTP_PRTY_01' as PRCS_ID,seg_code as SEGMT_CD,'' as CDD_SYS_RISK_DESC,
+			'' as CDD_RCMND_RISK_DESC,'' as PRTY_TYPE_DESC,'' as PRTY_SUB_TYPE_DESC,
+			'' as STS_DESC,'' as FM_Appropriateness_IND,SCI_Pty_mst.incorporation_cty_code as Incorporation_CTRY_CD,
+			'' as SCB_GRP_ENT_FL,'OTP-PARTY' as PRTY_CLAS,'' as BUSN_TYPE_DESC,
+			'' as AFFL_CD_DESC,'' as NEW_SEGMT_CD,'' as NEW_SEGMT_CD_DESC,
+			'' as STS_EFF_DT,'' as ENVMTL_AND_SOC_RISK_GRADE_CD,'' as ENVMTL_AND_SOC_RISK_GRADE_DESC,
+			'' as GLOBL_BANK_RATG_FL,'' as DSCLS_AGMT_EFF_DT,'' as CR_RISK_RESP_LOC_CD,
+			'' as IFRS_CNTPTY_TYPE_CD,'' as IFRS_CNTPTY_TYPE_DESC,'' as CTRY_OF_OPR_CD,
+			'' as PRPS_OF_ACCT_OPN,'' as RL_TYPE,'' as RFL_STS,'' as RFL_STS_DESC,
+			acc_type_code as PRTY_ACCT_TYPE_CD,'' as PRTY_ACCT_TYPE_CD_DESC,
+			'' as SCB_STAF_FL,CONCAT('SCI','-','@cntryCode','-',trim(cast(XREF.LSX_LE_ID as string))) as ENTRP_PARNT_PRTY_SROGT_ID,
+			XREF.LSX_LE_ID as ENTRP_PARNT_PRTY_HOST_NUM,'' as DCLR_INCM_AMT,
+			'' as NET_WRTH_AMT,'' as TOT_CR_LMT_AMT,'' as SLS_TURN_AMT,'' as SLS_TURN_CURY,
+			'' as ANL_INCM_AMT,'' as OTH_INCM_DESC,'' as Dodd_Frank_Incorporation_CTRY,
+			'' as US_DMCLE_FL,'' as ELIG_CNTC_PARTP_FL,'' as SPL_ENT_FL,
+			'' as SPL_ENT_SUB_CAT,'' as QIR_FL,'' as Dodd_Frank_ENT_TYPE_CD,
+			'' as Dodd_Frank_ENT_SUB_TYPE_CD,'' as FIN_ENT_EXCPTN_FL,'' as TRAD_STS,
+			'' as MAND_CLRG_FL,'' as Dodd_Frank_Compliant_FL,'' as PTCOL_2_FL,
+			'' as PTCOL_2_SIDE_LTR_FL,'' as DF_PTCOL_1_FL,'' as END_USR_EXPT_NOTC_FL,
+			'' as Opted_OUT_ANL_FIL_FL,'' as SEL_Mid_MK_EXPT_FL,'' as INIT_MRGN_METH,
+			'' as TOT_PRVSN_AMT_IN_LCY,'' as RL_AVTN_DT,'' as BCA_REF_NUM,
+			'' as SUPL_CHN_FIN_PRG_NM,'' as SUPL_CHN_FIN_PRG_SIZE,'' as PLCY_EXCPTN_CD,
+			'' as SHR_HLD_OWN_PCT , '' as mkt_in_fin_instm_drctv_clas_de,
+			'' as mkt_in_fin_instm_drctv_clas_cd, '' as cust_due_diligence_sts_cd,
+			'' as cust_due_diligence_sts_cd_desc, '' as cust_bsl_sub_segmt_cd,
+			'' as cust_bsl_sub_segmt_cd_desc, '' as dodd_frank_ent_type_cd_desc,
+			'' as cust_trad_sts_desc, '' as dflt_uniq_trd_id_gen_pr, '' as dflt_uniq_trd_id_gen_pr_desc,
+			'' as dodd_frank_due_dilig_cmpl_fl, '' as dodd_frank_due_dilig_cmpl_fl_d,
+			'' as dodd_frank_due_diligence_compl, '' as cust_regs_num, '' as cust_ult_risk_ctry_cd,
+			'' as lmts_cvrd, '' as mstr_programme_appl_id_num, '' as fm_appropriateness_ind_desc,
+			'' as cust_appl_ack_dt, '' as cust_rl_rmk, concat('EBB','-',
+			'@cntryCode','-',trim(EBBS_BRANCH_CODE),'-','BRANCH') as brnch_srogt_id,
+			DEFAULT_TBU_CODE as sys_dept_cd 
+	FROM	@PREFIX4_SCBT_R_PARTY_MST B LEFT JOIN @PREFIX4_SCBT_R_PARTY_SCI_MST SCI_PTY_MST 
+		ON B.PARTY_ID= SCI_PTY_MST.PARTY_ID 
+		AND B.BANK_GROUP_CODE = SCI_PTY_MST.BANK_GROUP_CODE 
+		AND B.CTY_CODE = SCI_PTY_MST.CTY_CODE  LEFT JOIN (
+	SELECT	* 
+	FROM	(
+	SELECT	PARTY_MST1.PARTY_ID AS PARTY_ID, XREF.LSX_LE_ID AS LSX_LE_ID,
+			XREF.LSX_LSP_ID AS LSX_LSP_ID, ROW_NUMBER() OVER (PARTITION BY XREF.LSX_EXT_SYS_CUST_ID 
+	ORDER BY XREF.LAST_UPD_DT DESC) AS MAXID 
+	FROM	@PREFIX4_SCBT_R_PARTY_MST PARTY_MST1,@PREFIX3_LSPSYSXREF XREF,
+			@PREFIX3_BKGLOC BOK_LOC  
+	where	XREF.LSX_EXT_SYS_CUST_ID = PARTY_MST1.PARTY_ID 
+		AND XREF.LSX_BKG_LOCTN_ID=BOK_LOC.BKL_SYS_GEN_BKG_LOCTN_ID 
+		AND XREF.LSX_EXT_SYS_CD_VAL ='OAF' 
+		AND BOK_LOC.bkl_cntry_iso_cd = PARTY_MST1.cty_code )AB 
+	WHERE	AB.MAXID=1)XREF 
+		ON B.PARTY_ID=XREF.PARTY_ID prty master`
+	err := Parse(&ast, sql1)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+}
 func TestSimpleSelectWhereQuotedStringEquality(t *testing.T) {
 	var ast Statement
 	err := Parse(&ast, `select 1 FROM some_other_table where a = "giraffe"`)
