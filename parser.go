@@ -216,6 +216,8 @@ func (p *Parser) parseCase(result *SelectStatement, alias string) error {
 					newCase.ElseCond = expression.String()
 				}
 			}
+		default:
+			return errors.New("Unknown Token " + item.String() + " Expected WHEN,ELSE, or THEN")
 		}
 	}
 }
