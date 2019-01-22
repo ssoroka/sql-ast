@@ -158,6 +158,8 @@ func (p *Parser) parseCase(result *SelectStatement, alias string) error {
 			result.CaseFields = append(result.CaseFields, *newCase)
 			result.ComplexSelects = append(result.ComplexSelects, newComplexSelect)
 			return nil
+		case Identifier:
+			newCase.FieldIdentifier = item.Val
 		case Case:
 			if newCase != nil {
 				result.CaseFields = append(result.CaseFields, *newCase)
@@ -257,7 +259,7 @@ func (p *Parser) Parse(result *Statement) error {
 	for {
 		// Read a field.
 		item := p.nextItem()
-		fmt.Println("item", item)
+		//fmt.Println("item", item)
 		switch item.Token {
 		case ParenOpen:
 			if isASubQuery {
@@ -276,7 +278,7 @@ func (p *Parser) Parse(result *Statement) error {
 			statement.Fields = append(statement.Fields, item.Val)
 			newComplexSelect := ComplexSelect{}
 			newComplexSelect.FieldName = item.Val
-			fmt.Println("FoundIdentifier", item.Val)
+			//fmt.Println("FoundIdentifier", item.Val)
 			if p.DetectFieldAlias(statement, item) {
 				newComplexSelect.Alias = statement.SelectAl[len(statement.SelectAl)-1].Alias
 			}
@@ -312,7 +314,7 @@ func (p *Parser) Parse(result *Statement) error {
 					p.unscan()
 				}
 			}
-			fmt.Println(len(ag.Params), ag.Params)
+			//fmt.Println(len(ag.Params), ag.Params)
 			statement.Aggregates = append(statement.Aggregates, ag)
 			statement.Fields = append(statement.Fields, ag.String())
 			pItem := Item{item.Token, ag.String()}
@@ -329,28 +331,28 @@ func (p *Parser) Parse(result *Statement) error {
 		CaseWhenLoop1:
 			for {
 				nextItem = p.nextItem()
-				fmt.Println("NextItem", nextItem)
+				//fmt.Println("NextItem", nextItem)
 				switch nextItem.Token {
 				case Whitespace:
 					continue
 				case Equals: //we found case...when...then...end
 					e := p.parseCase(statement, item.Val)
-					fmt.Println("Parse Case Done")
+					//fmt.Println("Parse Case Done")
 					if e != nil {
 						return e
 					}
 					break CaseWhenLoop1
 				case Case:
-					fmt.Println(statement)
+					//fmt.Println(statement)
 					return errors.New("Need = before Case in select field")
 				case As, Identifier: //WeFoundAlias
-					fmt.Println("Alias Detected")
+					//fmt.Println("Alias Detected")
 					p.unscan()
 					newComplexSelect := ComplexSelect{}
 					le := LiteralExpression{item.Token, item.Val}
 					newComplexSelect.StaticValue = le.String()
 					if p.DetectFieldAlias(statement, item) {
-						fmt.Println("Alias Found")
+						//fmt.Println("Alias Found")
 						newComplexSelect.Alias = statement.SelectAl[len(statement.SelectAl)-1].Alias
 					}
 					statement.ComplexSelects = append(statement.ComplexSelects, newComplexSelect)
@@ -366,7 +368,7 @@ func (p *Parser) Parse(result *Statement) error {
 			if e != nil {
 				return e
 			}
-			fmt.Println("Parse Case Done")
+			//fmt.Println("Parse Case Done")
 		detectCaseAlias:
 			for {
 				nitem := p.nextItem()
@@ -405,7 +407,7 @@ func (p *Parser) Parse(result *Statement) error {
 
 		// If the next token is not a comma then break the loop.
 		if item := p.nextItem(); item.Token != Comma {
-			fmt.Println(item)
+			//fmt.Println(item)
 			p.unscan()
 			break
 		}
@@ -814,7 +816,7 @@ func (p *Parser) parseExpression(result *Expression) error {
 // parseSubExpression is called when we know we have an expression.
 func parseSubExpression(result *Expression, items []Item) error {
 	items = withoutWhitespace(items)
-	fmt.Println("Processing this", items, len(items))
+	//fmt.Println("Processing this", items, len(items))
 	// fmt.Println(items[0], items[len(items)-1])
 	// strip parens if start and ends with parens
 	if len(items) >= 3 && items[0].Token == ParenOpen && items[len(items)-1].Token == ParenClose {

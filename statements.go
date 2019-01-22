@@ -90,14 +90,18 @@ func (t *ComplexTable) String() string {
 }
 
 type CaseField struct {
-	Alias    string
-	WhenCond []WhenCond
-	ElseCond string
+	Alias           string
+	FieldIdentifier string
+	WhenCond        []WhenCond
+	ElseCond        string
 }
 
 func (c *CaseField) String() string {
 	buffer := bytes.NewBuffer([]byte{})
 	buffer.WriteString("CASE\n")
+	if c.FieldIdentifier != "" {
+		buffer.WriteString(c.FieldIdentifier + "\n")
+	}
 	for _, w := range c.WhenCond {
 		buffer.WriteString("\t" + w.String() + "\n")
 	}

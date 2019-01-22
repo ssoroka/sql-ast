@@ -6,7 +6,7 @@ import (
 
 func TestSimpleSelect(t *testing.T) {
 	var ast Statement
-	err := Parse(&ast, `SELECT CASE blablabla from EBBS_GM_JOSSS`)
+	err := Parse(&ast, `SELECT * from some_table`)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -18,6 +18,43 @@ func TestSimpleSelect(t *testing.T) {
 	}
 
 	if ast.String() != "SELECT *\nFROM some_table" {
+		t.Error("Unexpected output", ast.String())
+	}
+}
+
+func TestSTFSelect(t *testing.T) {
+	var ast Statement
+	err := Parse(&ast, `SELECT   ProductNumber,
+      CASE ProductLine
+         WHEN 'R' THEN 'Road'
+         WHEN 'M' THEN 'Mountain'
+         WHEN 'T' THEN 'Touring'
+         WHEN 'S' THEN 'Other sale items'
+         ELSE 'Not for sale'
+      END as Category,
+   Name
+FROM Production.Product
+ORDER BY ProductNumber`)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	if ast == nil {
+		t.Error("Expected AST to be set but it was empty")
+		t.FailNow()
+	}
+
+	if ast.String() != `SELECT ProductNumber, CASE
+ProductLine
+	WHEN 'R' THEN 'Road'
+	WHEN 'M' THEN 'Mountain'
+	WHEN 'T' THEN 'Touring'
+	WHEN 'S' THEN 'Other sale items'
+	 ELSE 'Not for sale'
+END
+ AS Category, Name
+FROM Production.Product` {
 		t.Error("Unexpected output", ast.String())
 	}
 }
@@ -133,7 +170,7 @@ func TestSQL1(t *testing.T) {
 		AND XREF.LSX_EXT_SYS_CD_VAL ='OAF' 
 		AND BOK_LOC.bkl_cntry_iso_cd = PARTY_MST1.cty_code )AB 
 	WHERE	AB.MAXID=1)XREF 
-		ON B.PARTY_ID=XREF.PARTY_ID prty master`
+		ON B.PARTY_ID=XREF.PARTY_ID`
 	err := Parse(&ast, sql1)
 	if err != nil {
 		t.Error(err)
