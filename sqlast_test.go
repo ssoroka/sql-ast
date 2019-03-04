@@ -1,6 +1,7 @@
 package sqlast
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -22,6 +23,34 @@ func TestSimpleSelect(t *testing.T) {
 	}
 }
 
+func TestIncompleteJoin(t *testing.T) {
+	var ast Statement
+	err := Parse(&ast, `SELECT * from some_table JOIN AA`)
+	if err == nil {
+		t.Error(err)
+		t.FailNow()
+	}
+}
+func TestJoinComma(t *testing.T) {
+	var ast Statement
+	err := Parse(&ast, `SELECT * from some_table,table1,table2`)
+	if err != nil {
+		t.Log("Found Error")
+		t.Error(err)
+		return
+		//t.FailNow()
+	}
+	//t.Log()
+	oo := strings.Replace(ast.String(), "\n", " ", -1)
+	oo = strings.Replace(oo, "\t", " ", -1)
+	if oo != `SELECT * FROM some_table  , table1  , table2` {
+		t.Log("Difierent OUtput detected")
+		t.Log(oo)
+		t.FailNow()
+	} else {
+
+	}
+}
 func TestSTFSelect(t *testing.T) {
 	var ast Statement
 	err := Parse(&ast, `SELECT   ProductNumber,

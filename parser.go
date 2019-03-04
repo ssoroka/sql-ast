@@ -3,9 +3,11 @@ package sqlast
 import (
 	"fmt"
 	"io"
+	"os"
 	"strconv"
 
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 // Parser represents a parser.
@@ -13,6 +15,10 @@ type Parser struct {
 	s        *Scanner
 	itemBuf  []Item
 	lastItem Item
+}
+
+func init() {
+	log.SetOutput(os.Stdout)
 }
 
 // NewParser returns a new instance of Parser.
@@ -464,7 +470,7 @@ func (p *Parser) Parse(result *Statement) error {
 	}
 
 	if item := p.nextItem(); item.Token == Join || item.Token == LeftJoin || item.Token == RightJoin || item.Token == InnerJoin ||
-		item.Token == RightOuterJoin || item.Token == LeftOuterJoin {
+		item.Token == RightOuterJoin || item.Token == LeftOuterJoin || item.Token == Comma {
 		//fmt.Println("Join Found")
 		p.unscan()
 		ll := 0
@@ -476,14 +482,16 @@ func (p *Parser) Parse(result *Statement) error {
 			}
 			item := p.nextItem()
 			switch item.Token {
-			case Where:
+			case Where, EOF:
+				fmt.Println("Found", item.Inspect())
 				p.unscan()
 				break JoinLoop
-			case Join, LeftJoin, RightJoin, InnerJoin:
+			case Join, LeftJoin, RightJoin, InnerJoin, Comma:
 				newJoinStatement := &JoinTables{}
 				newJoinStatement.JoinType = item.Val
 				e := p.parseJoin(newJoinStatement, statement)
 				if e != nil {
+					log.Debug(e)
 					return e
 				}
 				if newJoinStatement.TableName != "" || newJoinStatement.SubSelect != nil {
@@ -494,8 +502,8 @@ func (p *Parser) Parse(result *Statement) error {
 	} else {
 		p.unscan()
 	}
-
-	if item := p.nextItem(); item.Token == ParenClose {
+	item2 := p.nextItem()
+	if item2.Token == ParenClose {
 		if isASubQuery {
 			parentCountSub--
 			if parentCountSub == 0 {
@@ -503,11 +511,17 @@ func (p *Parser) Parse(result *Statement) error {
 				return nil
 			}
 		}
+	} else if item2.Token == EOF {
+		p.unscan()
+		*result = Statement(statement)
+		return nil
 	} else {
+		fmt.Println(item2.Inspect())
 		p.unscan()
 	}
 
 	var err error
+
 	if err = p.parseConditional(&statement.Where); err != nil {
 		return err
 	}
@@ -676,7 +690,11 @@ func (p *Parser) parseJoin(result *JoinTables, statement *SelectStatement) error
 		if p.DetectTableAlias(statement, pTable) {
 			result.Alias = statement.TableAl[len(statement.TableAl)-1].Alias
 		}
+		log.Debug(tableName.Val)
 		result.TableName = tableName.Val
+		if result.JoinType == "," {
+			return nil
+		}
 		// retrieve on field
 		onCond := p.nextItem()
 		fmt.Println("TableName", result.TableName, onCond.Val)
@@ -709,6 +727,10 @@ func (p *Parser) parseJoin(result *JoinTables, statement *SelectStatement) error
 		result.SubSelect = subStatement.(*SelectStatement)
 		adad := &(result.OnCondition)
 		e = p.parseExpression(adad)
+	} else {
+		fmt.Errorf("Expected table name, but found %s instead", tableName.Inspect())
+		p.unscan()
+		return errors.New(fmt.Sprintf("found %v, expected field", tableName.Inspect())) //fmt.Errorf("found %v, expected field", item.Inspect())
 	}
 
 	return e

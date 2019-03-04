@@ -10,6 +10,10 @@ type Statement interface {
 	String() string
 }
 
+func NewSelectStatement() *SelectStatement {
+	return &SelectStatement{}
+}
+
 // SELECT
 //     [ALL | DISTINCT | DISTINCTROW ]
 //       [SQL_CACHE | SQL_NO_CACHE] [SQL_CALC_FOUND_ROWS]
@@ -173,7 +177,10 @@ func (j *JoinTables) String() string {
 	if j.Alias != "" {
 		buff.WriteString(" AS " + j.Alias)
 	}
-	buff.WriteString(" ON " + j.OnCondition.String())
+	if j.JoinType != "," {
+		buff.WriteString(" ON " + j.OnCondition.String())
+	}
+
 	return buff.String()
 }
 func (s *SelectStatement) String() string {
