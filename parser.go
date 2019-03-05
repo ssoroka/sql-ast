@@ -461,6 +461,7 @@ func (p *Parser) Parse(result *Statement) error {
 			parentCountSub--
 			if parentCountSub == 0 {
 				*result = Statement(statement)
+				fmt.Println(statement)
 				fmt.Println("Return after Selecting Table")
 				return nil
 			}
@@ -725,6 +726,9 @@ func (p *Parser) parseJoin(result *JoinTables, statement *SelectStatement) error
 			result.Alias = statement.TableAl[len(statement.TableAl)-1].Alias
 		}
 		result.SubSelect = subStatement.(*SelectStatement)
+		if result.JoinType == "," {
+			return nil
+		}
 		adad := &(result.OnCondition)
 		e = p.parseExpression(adad)
 	} else {
@@ -749,7 +753,7 @@ func (p *Parser) parseConditional(result *Expression) error {
 }
 
 func (p *Parser) parseExpression(result *Expression) error {
-
+	log.Debug("Parsing Expression")
 	items := []Item{}
 	done := false
 	// depth := 0

@@ -31,6 +31,26 @@ func TestIncompleteJoin(t *testing.T) {
 		t.FailNow()
 	}
 }
+func TestJoinComplexComma(t *testing.T) {
+	var ast Statement
+	err := Parse(&ast, `SELECT * from some_table,(select * from table1) AS XX,(select aa,bb from table2) as XY `)
+	if err != nil {
+		t.Log("Found Error")
+		t.Error(err)
+		return
+		//t.FailNow()
+	}
+	//t.Log()
+	oo := strings.Replace(ast.String(), "\n", " ", -1)
+	oo = strings.Replace(oo, "\t", " ", -1)
+	if oo != `SELECT * FROM some_table  , (SELECT * FROM table1) AS XX  , (SELECT aa, bb FROM table2) AS XY` {
+		t.Log("Difierent OUtput detected")
+		t.Log(oo)
+		t.FailNow()
+	} else {
+
+	}
+}
 func TestJoinComma(t *testing.T) {
 	var ast Statement
 	err := Parse(&ast, `SELECT * from some_table,table1,table2`)
