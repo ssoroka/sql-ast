@@ -94,8 +94,8 @@ func (s *Scanner) unread() {
 // otherwise readToken returns true and saves the value to lastReadToken.
 func (s *Scanner) tryReadToken(token string) bool {
 	//log.Println("tryReadToken", token)
-	// if token == "ASC" {
-	// 	fmt.Println("Try read asc", token)
+	// if token == "Current_date" {
+	// 	fmt.Println("Try read Current_date", token)
 	// }
 	readRunes := &bytes.Buffer{}
 	for i := 0; i < len(token); i++ {
@@ -369,6 +369,36 @@ func (s *Scanner) tryKeywords() bool {
 		return true
 	} else if s.tryReadToken("ROW_NUMBER") {
 		s.lastReadItem = Item{RowNum, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("TO_DATE") {
+		s.lastReadItem = Item{ToDate, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("YEAR") {
+		s.lastReadItem = Item{Year, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("QUARTER") {
+		s.lastReadItem = Item{Quarter, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("MONTH") {
+		s.lastReadItem = Item{Month, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("HOUR") {
+		s.lastReadItem = Item{Hour, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("MINUTE") {
+		s.lastReadItem = Item{Minute, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("LAST_DAY") {
+		s.lastReadItem = Item{LastDay, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("DATE_SUB") {
+		s.lastReadItem = Item{DateSub, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("CURRENT_DATE") {
+		s.lastReadItem = Item{CurrentDate, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("TRUNC") {
+		s.lastReadItem = Item{Trunc, s.lastReadToken}
 		return true
 	} else if s.tryReadToken("OVER") {
 		s.lastReadItem = Item{Over, s.lastReadToken}

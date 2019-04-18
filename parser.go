@@ -100,7 +100,7 @@ detectAliasLoop:
 		p.unscan()
 		return FoundAlias
 	}
-	return FoundAlias
+	//return FoundAlias
 }
 func (p *Parser) DetectTableAlias(result *SelectStatement, item Item) bool {
 	var nextItem Item
@@ -128,7 +128,7 @@ detectAliasLoop:
 					newAlias := TableAlias{item.Val, ii.Val}
 					result.TableAl = append(result.TableAl, newAlias)
 					return true
-					break identifierLookup
+					//break identifierLookup
 				default:
 					p.unscan()
 					break identifierLookup
@@ -141,7 +141,7 @@ detectAliasLoop:
 		p.unscan()
 		return false
 	}
-	return false
+	//return false
 }
 func (p *Parser) parseCase(result *SelectStatement, alias string) error {
 	var newCase *CaseField
@@ -294,7 +294,9 @@ func (p *Parser) Parse(result *Statement) error {
 			newComplexSelect := ComplexSelect{}
 			newComplexSelect.FieldName = "*"
 			statement.ComplexSelects = append(statement.ComplexSelects, newComplexSelect)
-		case Count, Avg, Min, Max, Sum, Concat, RowNum, Nvl, Trim, From_unixtime:
+		// this is parsing functions
+		case Count, Avg, Min, Max, Sum, Concat, RowNum, Nvl, Trim, From_unixtime, ToDate,
+			Year, Quarter, Month, Hour, Minute, LastDay, DateSub, Trunc, CurrentDate:
 			p.unscan()
 			ag := Aggregate{}
 			e := p.parseAggregate(&ag)
@@ -1010,7 +1012,7 @@ func parseSubExpression(result *Expression, items []Item) error {
 			// 	Right:    rightExpression,
 			// }
 			panic("left side is too large. too many items to the left of the boolean expression? " + itemsString(leftItems))
-			return nil
+			//return nil
 		}
 	}
 

@@ -31,6 +31,22 @@ func TestIncompleteJoin(t *testing.T) {
 		t.FailNow()
 	}
 }
+func TestNewFunctionSelect(t *testing.T) {
+	var ast Statement
+	err := Parse(&ast, `SELECT To_Date(ll),Year(),Quarter(),month(),hour(),minute(),LAST_DAY(),Hour(),Current_date() from some_table`)
+	if err != nil {
+		t.Log("Found Error")
+		t.Error(err)
+		return
+		//t.FailNow()
+	}
+	if ast.String() != "SELECT To_Date(ll), Year(), Quarter(), month(), hour(), minute(), LAST_DAY(), Hour(), Current_date()\n"+
+		"FROM some_table" {
+		t.Error("Parsed Data not same")
+		t.Log(ast)
+	}
+	//t.Log(ast)
+}
 func TestJoinComplexComma(t *testing.T) {
 	var ast Statement
 	err := Parse(&ast, `SELECT * from some_table,(select * from table1) AS XX,(select aa,bb from table2) as XY `)

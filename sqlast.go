@@ -89,6 +89,17 @@ const (
 	Trim
 	Unix_timestamp
 
+	ToDate
+	Year
+	Quarter
+	Month
+	Hour
+	Minute
+	LastDay
+	DateSub
+	Trunc
+	CurrentDate
+
 	// SqlServer specific keyword, for now
 	RowNum
 	Over

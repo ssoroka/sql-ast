@@ -116,6 +116,26 @@ func (i Item) Inspect() string {
 		tokenName = "NVL"
 	case Trim:
 		tokenName = "Trim"
+	case ToDate:
+		tokenName = "ToDate"
+	case Year:
+		tokenName = "Year"
+	case Quarter:
+		tokenName = "Quarter"
+	case Month:
+		tokenName = "Month"
+	case Hour:
+		tokenName = "Hour"
+	case Minute:
+		tokenName = "Minute"
+	case LastDay:
+		tokenName = "LastDay"
+	case DateSub:
+		tokenName = "DateSub"
+	case Trunc:
+		tokenName = "Trunc"
+	case CurrentDate:
+		tokenName = "Current_date"
 	case Concat:
 		tokenName = "Concat"
 	case As:
