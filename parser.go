@@ -986,14 +986,31 @@ func parseSubExpression(result *Expression, items []Item) error {
 		if idx := tokenIndex(items, op); idx > 0 {
 			leftItems := items[0:idx]
 			rightItems := items[idx+1 : len(items)]
-			if len(leftItems) == 1 && len(rightItems) > 0 {
+			if len(leftItems) > 1 && len(rightItems) > 0 {
 				var rightExpression Expression
 				rightExpression = &DummmyExpression{}
 				if err := parseSubExpression(&rightExpression, rightItems); err != nil {
 					return errors.Wrap(err, "Error parsing sub expression(3): "+itemsString(items))
 				}
+				var leftExpression Expression
+				leftExpression = &DummmyExpression{}
+				if err := parseSubExpression(&leftExpression, leftItems); err != nil {
+					return errors.Wrap(err, "Error parsing sub expression(4): "+itemsString(items))
+				}
 				*result = &BooleanExpression{
-					Left:     IdentifierExpression{Name: leftItems[0].Val},
+					Left:     leftExpression,
+					Operator: &ComparisonOperator{Token: items[idx].Token, Val: items[idx].Val},
+					Right:    rightExpression,
+				}
+				return nil
+			} else if len(leftItems) == 1 && len(rightItems) > 0 {
+				var rightExpression Expression
+				rightExpression = &DummmyExpression{}
+				if err := parseSubExpression(&rightExpression, rightItems); err != nil {
+					return errors.Wrap(err, "Error parsing sub expression(5): "+itemsString(items))
+				}
+				*result = &BooleanExpression{
+					Left:     &IdentifierExpression{Name: leftItems[0].Val},
 					Operator: &ComparisonOperator{Token: items[idx].Token, Val: items[idx].Val},
 					Right:    rightExpression,
 				}

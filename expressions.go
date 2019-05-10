@@ -181,7 +181,7 @@ func (pe *ParenExpression) String() string {
 }
 
 type BooleanExpression struct {
-	Left     IdentifierExpression
+	Left     Expression
 	Operator Comparison
 	Right    Expression
 }

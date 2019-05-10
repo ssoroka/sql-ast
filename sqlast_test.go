@@ -22,7 +22,20 @@ func TestSimpleSelect(t *testing.T) {
 		t.Error("Unexpected output", ast.String())
 	}
 }
-
+func TestWeirdBoolExpression(t *testing.T) {
+	input := "select * from HHH where TRIM ( RDM_ALL_CTRY_CD_VER1.ISO_IND ) = ''"
+	var ast Statement
+	err := Parse(&ast, input)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	if ast == nil {
+		t.Error("Expected AST to be set but it was empty")
+		t.FailNow()
+	}
+	t.Log(ast.String())
+}
 func TestIncompleteJoin(t *testing.T) {
 	var ast Statement
 	err := Parse(&ast, `SELECT * from some_table JOIN AA`)
