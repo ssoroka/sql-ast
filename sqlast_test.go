@@ -35,6 +35,15 @@ func TestWeirdBoolExpression(t *testing.T) {
 		t.FailNow()
 	}
 	t.Log(ast.String())
+	expected := `SELECT *
+FROM HHH
+WHERE
+	TRIM(RDM_ALL_CTRY_CD_VER1.ISO_IND) = ''`
+	if ast.String() != expected {
+		t.Log([]byte(ast.String()))
+		t.Log([]byte(expected))
+		t.Fail()
+	}
 }
 func TestIncompleteJoin(t *testing.T) {
 	var ast Statement

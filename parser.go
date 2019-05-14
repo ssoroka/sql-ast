@@ -626,10 +626,12 @@ AggrLoop:
 		case Whitespace:
 			continue
 		case ParenOpen:
+			fmt.Println("Found ParentOpen")
 			parentOpenFound = true
 			parentOpenNum++
 			result.Params = append(result.Params, item)
 		case ParenClose:
+			fmt.Println("Found ParentClose")
 			if !parentOpenFound {
 				return errors.New("Closing parenthesis found befor open parenthesis")
 			}
@@ -844,7 +846,7 @@ func (p *Parser) parseExpression(result *Expression) error {
 // parseSubExpression is called when we know we have an expression.
 func parseSubExpression(result *Expression, items []Item) error {
 	items = withoutWhitespace(items)
-	//fmt.Println("Processing this", items, len(items))
+	fmt.Println("Processing this", items, len(items))
 	// fmt.Println(items[0], items[len(items)-1])
 	// strip parens if start and ends with parens
 	if len(items) >= 3 && items[0].Token == ParenOpen && items[len(items)-1].Token == ParenClose {
@@ -902,7 +904,7 @@ func parseSubExpression(result *Expression, items []Item) error {
 	if len(items) > 1 && items[1].Token == ParenOpen && items[len(items)-1].Token == ParenClose {
 		parameters := []Item{}
 		for i, _ := range items {
-			if i == 0 || i == len(items)-1 {
+			if i <= 1 || i == len(items)-1 {
 				continue
 			}
 			parameters = append(parameters, items[i])
