@@ -298,6 +298,7 @@ func (p *Parser) Parse(result *Statement) error {
 		case Count, Avg, Min, Max, Sum, Concat, RowNum, Nvl, Trim, From_unixtime, ToDate,
 			Year, Quarter, Month, Hour, Minute, LastDay, DateSub, Trunc, CurrentDate:
 			p.unscan()
+			fmt.Println(">>>>", item)
 			ag := Aggregate{}
 			e := p.parseAggregate(&ag)
 			if e != nil {
@@ -703,18 +704,21 @@ func (p *Parser) parseJoin(result *JoinTables, statement *SelectStatement) error
 		// retrieve on field
 		onCond := p.nextItem()
 		fmt.Println("TableName", result.TableName, onCond.Val)
-
+		hasOn := true
 		if onCond.Token != On {
 			fmt.Errorf("Expected on, but found %s instead", onCond)
 			p.unscan()
-			return errors.New(fmt.Sprintf("found %v, expected field", onCond.Inspect())) //fmt.Errorf("found %v, expected field", item.Inspect())
+			hasOn = false
+			//return nil//errors.New(fmt.Sprintf("found %v, expected field", onCond.Inspect())) //fmt.Errorf("found %v, expected field", item.Inspect())
 		} else {
 			p.unscan()
 		}
 		//fmt.Println("Parsing Expression")
 		// ok, we have a where statement.
-		adad := &(result.OnCondition)
-		e = p.parseExpression(adad)
+		if hasOn {
+			adad := &(result.OnCondition)
+			e = p.parseExpression(adad)
+		}
 	} else if tableName.Token == ParenOpen {
 		fmt.Println("Complex Join Found")
 		p.unscan()

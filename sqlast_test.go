@@ -48,7 +48,7 @@ WHERE
 func TestIncompleteJoin(t *testing.T) {
 	var ast Statement
 	err := Parse(&ast, `SELECT * from some_table JOIN AA`)
-	if err == nil {
+	if err != nil {
 		t.Error(err)
 		t.FailNow()
 	}

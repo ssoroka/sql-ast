@@ -177,7 +177,7 @@ func (j *JoinTables) String() string {
 	if j.Alias != "" {
 		buff.WriteString(" AS " + j.Alias)
 	}
-	if j.JoinType != "," {
+	if j.JoinType != "," && j.OnCondition != nil {
 		buff.WriteString(" ON " + j.OnCondition.String())
 	}
 

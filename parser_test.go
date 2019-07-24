@@ -130,8 +130,8 @@ func TestAliasTable(t *testing.T) {
 func TestCaseSelect1(t *testing.T) {
 	query := `SELECT
 	player_name,
-	year,
-	"is_a_senior" = CASE WHEN year = "SR" THEN "yes" ELSE NULL END
+	years,
+	"is_a_senior" = CASE WHEN years = "SR" THEN "yes" ELSE NULL END
   FROM
 	benn.college_football_players
   `
@@ -160,8 +160,8 @@ func TestCaseSelect1(t *testing.T) {
 func TestCaseSelect2(t *testing.T) {
 	query := `SELECT
 	player_name,
-	year,
-	CASE WHEN year = "SR" AND year<50 THEN "yes" ELSE NULL END is_a_senior
+	years,
+	CASE WHEN years = "SR" AND years<50 THEN "yes" ELSE NULL END is_a_senior
   FROM
 	benn.college_football_players
   `
@@ -174,9 +174,9 @@ func TestCaseSelect2(t *testing.T) {
 		fmt.Println(err.Error())
 		os.Exit(-1)
 	}
-	output := `SELECT player_name, year, CASE
-	WHEN year = "SR"
-	AND year < 50 THEN "yes"
+	output := `SELECT player_name, years, CASE
+	WHEN years = "SR"
+	AND years < 50 THEN "yes"
 	 ELSE NULL
 END
  AS is_a_senior
