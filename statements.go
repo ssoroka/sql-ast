@@ -43,12 +43,28 @@ type SelectStatement struct {
 	Having         Expression
 	OrderBy        []SortField
 	CaseFields     []CaseField
+	Unions         []UnionStatement
 	// GroupBy
 	// Having Expression
 	// OrderBy
 	// Limit
 	ForUpdate bool
 }
+type UnionStatement struct {
+	Union     string
+	Statement SelectStatement
+}
+
+func (c *UnionStatement) String() string {
+	buff := bytes.Buffer{}
+	buff.WriteString(" UNION ")
+	if strings.ToLower(c.Union) == "all" {
+		buff.WriteString(" ALL")
+	}
+	buff.WriteString(c.Statement.String())
+	return buff.String()
+}
+
 type ComplexSelect struct {
 	Alias          string
 	FieldName      string
@@ -219,6 +235,9 @@ func (s *SelectStatement) String() string {
 		}
 		out.WriteString("\nOrder By\n\t")
 		out.WriteString(strings.Join(oo, ","))
+	}
+	if len(s.Unions) > 0 {
+		out.WriteString(s.Unions[0].String())
 	}
 	return out.String()
 }

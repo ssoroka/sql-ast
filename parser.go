@@ -561,6 +561,24 @@ nextOption:
 					return nil
 				}
 			}
+		case Union:
+			fmt.Println("FoundUNION")
+			union := UnionStatement{}
+			nextItem := p.nextItem()
+			if nextItem.Token == All {
+				union.Union = "all"
+			} else {
+				p.unscan()
+			}
+			var unionStatement Statement
+			e := p.Parse(&unionStatement)
+			if e != nil {
+				fmt.Println(e.Error())
+				return e
+			}
+			union.Statement = *(unionStatement.(*SelectStatement))
+			fmt.Println(union.Statement.String())
+			statement.Unions = append(statement.Unions, union)
 		case EOF:
 			break nextOption
 		}

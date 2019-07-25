@@ -417,3 +417,23 @@ WHERE
 // 		t.Error("6. read failed, expected 2, got", string(r))
 // 	}
 // }
+func TestUnion(t *testing.T) {
+	var ast Statement
+	err := Parse(&ast, `SELECT A from some_table UNION SELECT A2 from some_table2`)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	if ast == nil {
+		t.Error("Expected AST to be set but it was empty")
+		t.FailNow()
+	}
+	outputTarget := `SELECT A
+FROM some_table UNION SELECT A2
+FROM some_table2`
+	if ast.String() != outputTarget {
+		t.Error("Unexpected output", ast.String())
+		t.Error("target", []byte(outputTarget))
+		t.Error("target", []byte(ast.String()))
+	}
+}

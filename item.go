@@ -158,6 +158,12 @@ func (i Item) Inspect() string {
 		tokenName = "Desc"
 	case RowNum:
 		tokenName = "RowNumber"
+	case In:
+		tokenName = "In"
+	case Union:
+		tokenName = "Union"
+	case All:
+		tokenName = "Union"
 	default:
 		tokenName = "Unknwon Token"
 	}

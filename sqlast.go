@@ -76,6 +76,8 @@ const (
 	Asc
 	Desc
 	As
+	Union
+	All
 
 	//aggregate
 	Sum
@@ -88,6 +90,7 @@ const (
 	From_unixtime
 	Trim
 	Unix_timestamp
+	Upper
 
 	ToDate
 	Year

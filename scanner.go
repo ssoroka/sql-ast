@@ -355,6 +355,9 @@ func (s *Scanner) tryKeywords() bool {
 	} else if s.tryReadToken("TRIM") {
 		s.lastReadItem = Item{Trim, s.lastReadToken}
 		return true
+	} else if s.tryReadToken("UNION") {
+		s.lastReadItem = Item{Union, s.lastReadToken}
+		return true
 	} else if s.tryReadToken("UNIX_TIMESTAMP") {
 		s.lastReadItem = Item{Unix_timestamp, s.lastReadToken}
 		return true
