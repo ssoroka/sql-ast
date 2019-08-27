@@ -145,8 +145,13 @@ func (w *WhenCond) String() string {
 	return "WHEN " + w.WhenCond.String() + " THEN " + w.ThenCond
 }
 
+type OverStatement struct {
+	PartitionBy []string
+	OrderBy     []string
+}
 type Aggregate struct {
 	AggregateType string
+	Over          OverStatement
 	FieldName     string
 	Params        []Item
 }
@@ -170,7 +175,16 @@ func (a *Aggregate) String() string {
 		Lit := LiteralExpression{par.Token, par.Val}
 		buff.WriteString(Lit.String())
 	}
-
+	if len(a.Over.OrderBy) > 0 || len(a.Over.PartitionBy) > 0 {
+		tempBuff := bytes.Buffer{}
+		if len(a.Over.PartitionBy) > 0 {
+			tempBuff.WriteString("PARTITION BY " + strings.Join(a.Over.PartitionBy, ",") + " ")
+		}
+		if len(a.Over.OrderBy) > 0 {
+			tempBuff.WriteString("ORDER BY " + strings.Join(a.Over.OrderBy, ","))
+		}
+		buff.WriteString(" OVER (" + tempBuff.String() + ")")
+	}
 	return buff.String() //fmt.Sprintf("%s(%s)", a.AggregateType, a.FieldName)
 }
 

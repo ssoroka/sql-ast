@@ -166,6 +166,10 @@ func (le *LiteralExpression) String() string {
 		return "Concat"
 	case Trim:
 		return "Trim"
+	case Cast:
+		return "Cast"
+	case Explode:
+		return "Explode"
 	default:
 		panic("can't handle literal expression token type: " + fmt.Sprintf("%d %s", le.Token, le.Val))
 	}

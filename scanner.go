@@ -352,6 +352,39 @@ func (s *Scanner) tryKeywords() bool {
 	} else if s.tryReadToken("NVL") {
 		s.lastReadItem = Item{Nvl, s.lastReadToken}
 		return true
+	} else if s.tryReadToken("SPLIT") {
+		s.lastReadItem = Item{Split, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("SUBSTR") {
+		s.lastReadItem = Item{Substr, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("REGEX_REPLACE") {
+		s.lastReadItem = Item{RegexReplace, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("LPAD") {
+		s.lastReadItem = Item{Lpad, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("DATEDIFF") {
+		s.lastReadItem = Item{DateDiff, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("EXPLODE") {
+		s.lastReadItem = Item{Explode, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("LENGTH") {
+		s.lastReadItem = Item{Length, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("COALESCE") {
+		s.lastReadItem = Item{COALESCE, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("CAST") {
+		s.lastReadItem = Item{Cast, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("RANK") {
+		s.lastReadItem = Item{Rank, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("DENSE_RANK") {
+		s.lastReadItem = Item{DenseRank, s.lastReadToken}
+		return true
 	} else if s.tryReadToken("TRIM") {
 		s.lastReadItem = Item{Trim, s.lastReadToken}
 		return true

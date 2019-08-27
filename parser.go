@@ -143,7 +143,7 @@ detectAliasLoop:
 	}
 	//return false
 }
-func (p *Parser) parseCase(result *SelectStatement, alias string) error {
+func (p *Parser) ParseCase(result *SelectStatement, alias string) error {
 	var newCase *CaseField
 	var newWhen *WhenCond
 	for {
@@ -296,14 +296,16 @@ func (p *Parser) Parse(result *Statement) error {
 			statement.ComplexSelects = append(statement.ComplexSelects, newComplexSelect)
 		// this is parsing functions
 		case Count, Avg, Min, Max, Sum, Concat, RowNum, Nvl, Trim, From_unixtime, ToDate,
-			Year, Quarter, Month, Hour, Minute, LastDay, DateSub, Trunc, CurrentDate:
+			Year, Quarter, Month, Hour, Minute, LastDay, DateSub, Trunc, CurrentDate, Upper, Lower, Split, Substr, RegexReplace,
+			Lpad, DateDiff, Explode, Length, COALESCE, Cast, Rank, DenseRank:
 			p.unscan()
-			fmt.Println(">>>>", item)
+			//fmt.Println(">>>>", item)
 			ag := Aggregate{}
 			e := p.parseAggregate(&ag)
 			if e != nil {
 				return e
 			}
+
 			if item.Token == RowNum {
 				nextToken := p.nextItem()
 				if nextToken.Token == Over {
@@ -323,6 +325,8 @@ func (p *Parser) Parse(result *Statement) error {
 					p.unscan()
 				}
 			}
+			// pp := p.nextItem()
+			// fmt.Println("PP", pp.String())
 			//fmt.Println(len(ag.Params), ag.Params)
 			statement.Aggregates = append(statement.Aggregates, ag)
 			statement.Fields = append(statement.Fields, ag.String())
@@ -345,7 +349,7 @@ func (p *Parser) Parse(result *Statement) error {
 				case Whitespace:
 					continue
 				case Equals: //we found case...when...then...end
-					e := p.parseCase(statement, item.Val)
+					e := p.ParseCase(statement, item.Val)
 					//fmt.Println("Parse Case Done")
 					if e != nil {
 						return e
@@ -373,7 +377,7 @@ func (p *Parser) Parse(result *Statement) error {
 			}
 		case Case:
 			p.unscan()
-			e := p.parseCase(statement, "")
+			e := p.ParseCase(statement, "")
 			if e != nil {
 				return e
 			}
@@ -464,8 +468,8 @@ func (p *Parser) Parse(result *Statement) error {
 			parentCountSub--
 			if parentCountSub == 0 {
 				*result = Statement(statement)
-				fmt.Println(statement)
-				fmt.Println("Return after Selecting Table")
+				//fmt.Println(statement)
+				//fmt.Println("Return after Selecting Table")
 				return nil
 			}
 		}
@@ -487,7 +491,7 @@ func (p *Parser) Parse(result *Statement) error {
 			item := p.nextItem()
 			switch item.Token {
 			case Where, EOF:
-				fmt.Println("Found", item.Inspect())
+				//fmt.Println("Found", item.Inspect())
 				p.unscan()
 				break JoinLoop
 			case Join, LeftJoin, RightJoin, InnerJoin, Comma:
@@ -520,7 +524,7 @@ func (p *Parser) Parse(result *Statement) error {
 		*result = Statement(statement)
 		return nil
 	} else {
-		fmt.Println(item2.Inspect())
+		//fmt.Println(item2.Inspect())
 		p.unscan()
 	}
 
@@ -543,7 +547,7 @@ func (p *Parser) Parse(result *Statement) error {
 nextOption:
 	for {
 		item := p.nextItem()
-		fmt.Println(item)
+		//fmt.Println(item)
 		switch item.Token {
 		case Whitespace:
 			continue
@@ -562,7 +566,7 @@ nextOption:
 				}
 			}
 		case Union:
-			fmt.Println("FoundUNION")
+			//fmt.Println("FoundUNION")
 			union := UnionStatement{}
 			nextItem := p.nextItem()
 			if nextItem.Token == All {
@@ -577,7 +581,7 @@ nextOption:
 				return e
 			}
 			union.Statement = *(unionStatement.(*SelectStatement))
-			fmt.Println(union.Statement.String())
+			//fmt.Println(union.Statement.String())
 			statement.Unions = append(statement.Unions, union)
 		case EOF:
 			break nextOption
@@ -590,10 +594,10 @@ nextOption:
 
 func (p *Parser) parseOrderBy(result *[]SortField) error {
 	var curField SortField
-	fmt.Println("Parse Orderby")
+	//fmt.Println("Parse Orderby")
 	for {
 		item := p.nextItem()
-		fmt.Println(item)
+		//fmt.Println(item)
 		switch item.Token {
 		case Whitespace:
 			continue
@@ -645,12 +649,12 @@ AggrLoop:
 		case Whitespace:
 			continue
 		case ParenOpen:
-			fmt.Println("Found ParentOpen")
+			//fmt.Println("Found ParentOpen")
 			parentOpenFound = true
 			parentOpenNum++
 			result.Params = append(result.Params, item)
 		case ParenClose:
-			fmt.Println("Found ParentClose")
+			// fmt.Println("Found ParentClose")
 			if !parentOpenFound {
 				return errors.New("Closing parenthesis found befor open parenthesis")
 			}
@@ -678,6 +682,22 @@ AggrLoop:
 		}
 
 	}
+	item := p.nextItem()
+	if item.Token == Over {
+		fmt.Println("Found OVER", result.String())
+		newOverStatement := OverStatement{}
+		e := p.parseOver(&newOverStatement)
+		if e != nil {
+			fmt.Println("Error Found on Processing OVER", e.Error())
+			return e
+		}
+		tt := p.nextItem()
+		fmt.Println("TT", tt.String())
+		p.unscan()
+		result.Over = newOverStatement
+	} else {
+		p.unscan()
+	}
 	if parentOpenNum != 0 {
 		return errors.New("NO matching bracket")
 	}
@@ -701,6 +721,64 @@ AggrLoop:
 	// }
 	return nil
 }
+func (p *Parser) parseOver(result *OverStatement) error {
+	parentCount := 0
+	parentOpenFound := false
+mainLoop:
+	for true {
+		item := p.nextItem()
+		// fmt.Println(item.String())
+		if item.Token == EOF {
+			return errors.New("Unexpected End of line")
+		}
+		switch item.Token {
+		case ParenOpen:
+			parentOpenFound = true
+			parentCount++
+		case ParenClose:
+
+			if !parentOpenFound {
+				return errors.New("Closing parenthesis found befor open parenthesis")
+			}
+			parentCount--
+			// fmt.Println("Found ParentCLose", parentCount)
+			if parentCount == 0 {
+				return nil
+			}
+		case PartitionBy:
+			for true {
+				KK := p.nextItem()
+				//fmt.Println("Partition By", KK)
+				switch KK.Token {
+				case Identifier:
+					result.PartitionBy = append(result.PartitionBy, KK.Val)
+				case Comma:
+					continue
+				default:
+					p.unscan()
+					//break
+					continue mainLoop
+				}
+			}
+		case OrderBy:
+			for true {
+				KK := p.nextItem()
+				//fmt.Println("Order By", KK)
+				switch KK.Token {
+				case Identifier:
+					result.OrderBy = append(result.OrderBy, KK.Val)
+				case Comma:
+					continue
+				default:
+					//fmt.Println(KK)
+					p.unscan()
+					continue mainLoop
+				}
+			}
+		}
+	}
+	return nil
+}
 
 // parseJoin detects the "JOIN" clause and processes it, if any.
 func (p *Parser) parseJoin(result *JoinTables, statement *SelectStatement) error {
@@ -721,7 +799,7 @@ func (p *Parser) parseJoin(result *JoinTables, statement *SelectStatement) error
 		}
 		// retrieve on field
 		onCond := p.nextItem()
-		fmt.Println("TableName", result.TableName, onCond.Val)
+		// fmt.Println("TableName", result.TableName, onCond.Val)
 		hasOn := true
 		if onCond.Token != On {
 			fmt.Errorf("Expected on, but found %s instead", onCond)
@@ -738,7 +816,7 @@ func (p *Parser) parseJoin(result *JoinTables, statement *SelectStatement) error
 			e = p.parseExpression(adad)
 		}
 	} else if tableName.Token == ParenOpen {
-		fmt.Println("Complex Join Found")
+		// fmt.Println("Complex Join Found")
 		p.unscan()
 		var subStatement Statement
 		e = p.Parse(&subStatement)
@@ -826,7 +904,7 @@ func (p *Parser) parseExpression(result *Expression) error {
 		}
 
 	}
-	fmt.Println(items)
+	// fmt.Println(items)
 	//todo: write expression
 	if len(items) > 0 {
 		if err := parseSubExpression(result, items); err != nil {
@@ -868,7 +946,7 @@ func (p *Parser) parseExpression(result *Expression) error {
 // parseSubExpression is called when we know we have an expression.
 func parseSubExpression(result *Expression, items []Item) error {
 	items = withoutWhitespace(items)
-	fmt.Println("Processing this", items, len(items))
+	// fmt.Println("Processing this", items, len(items))
 	// fmt.Println(items[0], items[len(items)-1])
 	// strip parens if start and ends with parens
 	if len(items) >= 3 && items[0].Token == ParenOpen && items[len(items)-1].Token == ParenClose {
@@ -922,7 +1000,7 @@ func parseSubExpression(result *Expression, items []Item) error {
 			return nil
 		}
 	}
-	fmt.Println(len(items) > 1, items[1].Token == ParenOpen, items[len(items)-1].Token == ParenClose)
+	// fmt.Println(len(items) > 1, items[1].Token == ParenOpen, items[len(items)-1].Token == ParenClose)
 	if len(items) > 1 && items[1].Token == ParenOpen && items[len(items)-1].Token == ParenClose {
 		parameters := []Item{}
 		for i, _ := range items {

@@ -91,6 +91,17 @@ const (
 	Trim
 	Unix_timestamp
 	Upper
+	//another one
+	Lower
+	Split
+	Substr
+	Lpad
+	RegexReplace
+	DateDiff
+	Explode
+	Length
+	COALESCE
+	Cast
 
 	ToDate
 	Year
@@ -105,6 +116,8 @@ const (
 
 	// SqlServer specific keyword, for now
 	RowNum
+	Rank
+	DenseRank
 	Over
 	PartitionBy
 )

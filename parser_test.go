@@ -100,9 +100,9 @@ Having
 		t.Errorf("Failed to parse alias field Content of SelectAl %s content of Aggregates %s", pp.SelectAl, pp.Aggregates)
 
 	}
-	t.Log("AAA1", tk.JsonString(pp.ComplexSelects[0]))
-	t.Log("AAA2", tk.JsonString(pp.ComplexSelects[1]))
-	t.Log("AAA3", tk.JsonString(pp.ComplexSelects[2]))
+	//t.Log("AAA1", tk.JsonString(pp.ComplexSelects[0]))
+	//t.Log("AAA2", tk.JsonString(pp.ComplexSelects[1]))
+	//t.Log("AAA3", tk.JsonString(pp.ComplexSelects[2]))
 	if pp.String() != output {
 		t.Errorf("Output is Different, Expecting %s but got %s instead", output, pp.String())
 		t.Fail()
@@ -156,6 +156,49 @@ func TestCaseSelect1(t *testing.T) {
 		t.Errorf("Failed to correctly detect fields")
 	}
 	fmt.Println(pp.ComplexSelects)
+}
+func TestOverParX(t *testing.T) {
+	query := `SELECT a, SUM(b) OVER (PARTITION BY c, d ORDER BY e, f) as BB
+	FROM T`
+	source := strings.NewReader(query)
+	parser := NewParser(source)
+	//var selectStatement ast.Statement
+	selectStatement := Statement(&SelectStatement{})
+	err := parser.Parse(&selectStatement)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(-1)
+	}
+	output := `SELECT a, SUM(b) OVER (PARTITION BY c,d ORDER BY e,f) AS BB
+FROM T`
+	pp := selectStatement.(*SelectStatement)
+	if pp.String() != output {
+		t.Errorf("Output is Different, Expecting %s but got %s instead", output, pp.String())
+		t.Fail()
+		return
+	}
+}
+func TestOverPartition(t *testing.T) {
+	query := `SELECT a, SUM(b) OVER (PARTITION BY c, d ORDER BY e, f)
+	FROM T
+`
+	source := strings.NewReader(query)
+	parser := NewParser(source)
+	//var selectStatement ast.Statement
+	selectStatement := Statement(&SelectStatement{})
+	err := parser.Parse(&selectStatement)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(-1)
+	}
+	output := `SELECT a, SUM(b) OVER (PARTITION BY c,d ORDER BY e,f)
+FROM T`
+	pp := selectStatement.(*SelectStatement)
+	if pp.String() != output {
+		t.Errorf("Output is Different, Expecting %s but got %s instead", output, pp.String())
+		t.Fail()
+		return
+	}
 }
 func TestCaseSelect2(t *testing.T) {
 	query := `SELECT
@@ -317,6 +360,23 @@ Order By
 		return
 	}
 }
+func TestMultiOver(t *testing.T) {
+	source := strings.NewReader(`select pat_id, 
+	dept_id, 
+	ins_amt, 
+	row_number() over (order by ins_amt) as rn, 
+	rank() over (order by ins_amt ) as rk, 
+	dense_rank() over (order by ins_amt ) as dense_rk 
+	from patient`)
+	parser := NewParser(source)
+	selectStatement := Statement(&SelectStatement{})
+	err := parser.Parse(&selectStatement)
+	if err != nil {
+		t.Fail()
+		fmt.Println(err.Error())
+		return
+	}
+}
 func TestRowNumOver(t *testing.T) {
 	source := strings.NewReader("select riskcode, masterno , row_number() over (partition by masterno order by seqno desc) as max_row from PREFIX2_RSKIND RSKND")
 	parser := NewParser(source)
@@ -333,5 +393,12 @@ func TestRowNumOver(t *testing.T) {
 		fmt.Println(err.Error())
 		return
 	}
-	t.Log(pp)
+	//t.Log(pp)
+	expectedOutput := `SELECT riskcode, masterno, row_number() OVER (PARTITION BY masterno ORDER BY seqno) AS max_row
+FROM PREFIX2_RSKIND AS RSKND`
+	if pp.String() != expectedOutput {
+		t.Error("Unexpected output, got", pp.String(), "expected", expectedOutput)
+		t.Fail()
+
+	}
 }
