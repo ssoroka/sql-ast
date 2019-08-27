@@ -171,8 +171,11 @@ type TableAlias struct {
 func (a *Aggregate) String() string {
 	buff := bytes.Buffer{}
 	buff.WriteString(a.AggregateType)
-	for _, par := range a.Params {
+	for i, par := range a.Params {
 		Lit := LiteralExpression{par.Token, par.Val}
+		if i > 1 && par.Token != Comma && a.Params[i-1].Token != Comma && par.Token != ParenClose {
+			buff.WriteString(" ")
+		}
 		buff.WriteString(Lit.String())
 	}
 	if len(a.Over.OrderBy) > 0 || len(a.Over.PartitionBy) > 0 {

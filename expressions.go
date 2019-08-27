@@ -170,6 +170,8 @@ func (le *LiteralExpression) String() string {
 		return "Cast"
 	case Explode:
 		return "Explode"
+	case Lpad:
+		return "Lpad"
 	default:
 		panic("can't handle literal expression token type: " + fmt.Sprintf("%d %s", le.Token, le.Val))
 	}

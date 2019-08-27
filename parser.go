@@ -176,7 +176,7 @@ func (p *Parser) ParseCase(result *SelectStatement, alias string) error {
 				newCase.WhenCond = append(newCase.WhenCond, *newWhen)
 			}
 			newWhen = &WhenCond{}
-			e := p.parseExpression(&(newWhen.WhenCond))
+			e := p.ParseExpression(&(newWhen.WhenCond))
 			if e != nil {
 				return e
 			}
@@ -301,7 +301,7 @@ func (p *Parser) Parse(result *Statement) error {
 			p.unscan()
 			//fmt.Println(">>>>", item)
 			ag := Aggregate{}
-			e := p.parseAggregate(&ag)
+			e := p.ParseAggregate(&ag)
 			if e != nil {
 				return e
 			}
@@ -554,7 +554,7 @@ nextOption:
 		case GroupBy:
 			p.parseGroupBy(&(statement.GroupBy))
 		case Having:
-			p.parseExpression(&statement.Having)
+			p.ParseExpression(&statement.Having)
 		case OrderBy:
 			p.parseOrderBy(&statement.OrderBy)
 		case ParenClose:
@@ -635,7 +635,7 @@ func (p *Parser) parseGroupBy(result *[]string) error {
 }
 
 // parse aggregate AVG,SUM,MAX,MIN,COUNT
-func (p *Parser) parseAggregate(result *Aggregate) error {
+func (p *Parser) ParseAggregate(result *Aggregate) error {
 	// retrieve aggregate function
 	aggrFunc := p.nextItem()
 	result.AggregateType = aggrFunc.Val
@@ -813,7 +813,7 @@ func (p *Parser) parseJoin(result *JoinTables, statement *SelectStatement) error
 		// ok, we have a where statement.
 		if hasOn {
 			adad := &(result.OnCondition)
-			e = p.parseExpression(adad)
+			e = p.ParseExpression(adad)
 		}
 	} else if tableName.Token == ParenOpen {
 		// fmt.Println("Complex Join Found")
@@ -834,7 +834,7 @@ func (p *Parser) parseJoin(result *JoinTables, statement *SelectStatement) error
 			return nil
 		}
 		adad := &(result.OnCondition)
-		e = p.parseExpression(adad)
+		e = p.ParseExpression(adad)
 	} else {
 		fmt.Errorf("Expected table name, but found %s instead", tableName.Inspect())
 		p.unscan()
@@ -853,10 +853,10 @@ func (p *Parser) parseConditional(result *Expression) error {
 	}
 
 	// ok, we have a where statement.
-	return p.parseExpression(result)
+	return p.ParseExpression(result)
 }
 
-func (p *Parser) parseExpression(result *Expression) error {
+func (p *Parser) ParseExpression(result *Expression) error {
 	log.Debug("Parsing Expression")
 	items := []Item{}
 	done := false

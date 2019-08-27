@@ -358,6 +358,9 @@ func (s *Scanner) tryKeywords() bool {
 	} else if s.tryReadToken("SUBSTR") {
 		s.lastReadItem = Item{Substr, s.lastReadToken}
 		return true
+	} else if s.tryReadToken("SUBSTRING") {
+		s.lastReadItem = Item{Substr, s.lastReadToken}
+		return true
 	} else if s.tryReadToken("REGEX_REPLACE") {
 		s.lastReadItem = Item{RegexReplace, s.lastReadToken}
 		return true
@@ -438,6 +441,9 @@ func (s *Scanner) tryKeywords() bool {
 		return true
 	} else if s.tryReadToken("OVER") {
 		s.lastReadItem = Item{Over, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("UPPER") {
+		s.lastReadItem = Item{Upper, s.lastReadToken}
 		return true
 	} else if s.tryReadToken("PARTITION BY") {
 		s.lastReadItem = Item{PartitionBy, s.lastReadToken}

@@ -376,6 +376,82 @@ func TestMultiOver(t *testing.T) {
 		fmt.Println(err.Error())
 		return
 	}
+	expectedOutput := `SELECT pat_id, dept_id, ins_amt, row_number() OVER (ORDER BY ins_amt) AS rn, rank() OVER (ORDER BY ins_amt) AS rk, dense_rank() OVER (ORDER BY ins_amt) AS dense_rk
+FROM patient`
+	pp := selectStatement.(*SelectStatement)
+	if pp.String() != expectedOutput {
+		t.Error("Unexpected output, got", pp.String(), "expected", expectedOutput)
+		t.Fail()
+
+	}
+}
+func TestCountDistinct(t *testing.T) {
+	source := strings.NewReader(`SELECT COUNT (DISTINCT columns) FROM table`)
+	parser := NewParser(source)
+	selectStatement := Statement(&SelectStatement{})
+	err := parser.Parse(&selectStatement)
+	if err != nil {
+		t.Fail()
+		fmt.Println(err.Error())
+		return
+	}
+	pp := selectStatement.(*SelectStatement)
+	expectedOutput := `SELECT COUNT(DISTINCT columns)
+FROM table`
+	if pp.String() != expectedOutput {
+		t.Error("Unexpected output, got", pp.String(), "expected", expectedOutput)
+		t.Fail()
+
+	}
+}
+func TestPartialCase(t *testing.T) {
+	source := strings.NewReader(`CASE ProductLine
+	WHEN 'R' THEN 'Road'
+	WHEN 'M' THEN 'Mountain'
+	WHEN 'T' THEN 'Touring'
+	WHEN 'S' THEN 'Other sale items'
+	ELSE 'Not for sale'
+ END as Category`)
+	parser := NewParser(source)
+	selectStatement := SelectStatement{}
+	err := parser.ParseCase(&selectStatement, "")
+	if err != nil {
+		t.Fail()
+		fmt.Println(err.Error())
+		return
+	}
+	t.Log(selectStatement.ComplexSelects[0].String())
+}
+func TestParseAggr(t *testing.T) {
+	source := strings.NewReader("regex_replace(\"(AS)\",\"SS\",\"II\")")
+	p := NewParser(source)
+	ag := Aggregate{}
+	e := p.ParseAggregate(&ag)
+	if e != nil {
+		t.Fail()
+	}
+	t.Log(ag.String())
+}
+func TestNewAggregate1(t *testing.T) {
+	source := strings.NewReader("select explode(riskcode), cast(masterno as int), LPAD('LL','oo',3), split(aa,'b'),Substr(aa,bb,4)," +
+		"Lpad(a,b,c),regex_replace(\"(AS)\",\"SS\",\"II\"),Substring(aa,bb,4),UPPER('SS') from PREFIX2_RSKIND RSKND")
+	parser := NewParser(source)
+	selectStatement := Statement(&SelectStatement{})
+	err := parser.Parse(&selectStatement)
+	if err != nil {
+		t.Fail()
+		fmt.Println(err.Error())
+		return
+	}
+	pp := selectStatement.(*SelectStatement)
+
+	//t.Log(pp)
+	expectedOutput := `SELECT explode(riskcode), cast(masterno As int), LPAD('LL','oo',3), split(aa,'b'), Substr(aa,bb,4), Lpad(a,b,c), regex_replace("(AS)","SS","II"), Substring(aa,bb,4), UPPER('SS')
+FROM PREFIX2_RSKIND AS RSKND`
+	if pp.String() != expectedOutput {
+		t.Error("Unexpected output, got", pp.String(), "expected", expectedOutput)
+		t.Fail()
+	}
 }
 func TestRowNumOver(t *testing.T) {
 	source := strings.NewReader("select riskcode, masterno , row_number() over (partition by masterno order by seqno desc) as max_row from PREFIX2_RSKIND RSKND")
