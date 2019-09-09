@@ -32,6 +32,20 @@ type LogicalOperator struct {
 	Val   string
 }
 
+// this
+type ANDLogicalExpression struct {
+	Expressions []Expression
+}
+
+func (a *ANDLogicalExpression) String() string {
+	output := []string{}
+	for _, val := range a.Expressions {
+		output = append(output, val.String())
+	}
+	return strings.Join(output, " AND ")
+
+}
+
 // bit_expr:
 //     bit_expr | bit_expr
 //   | bit_expr & bit_expr
@@ -172,8 +186,11 @@ func (le *LiteralExpression) String() string {
 		return "Explode"
 	case Lpad:
 		return "Lpad"
+	case Asterisk:
+		return "*"
 	default:
-		panic("can't handle literal expression token type: " + fmt.Sprintf("%d %s", le.Token, le.Val))
+		//panic("can't handle literal expression token type: " + fmt.Sprintf("%d %s", le.Token, le.Val))
+		return le.Val
 	}
 }
 
