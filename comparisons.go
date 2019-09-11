@@ -33,6 +33,8 @@ func (co *ComparisonOperator) String() string {
 		return "IS NOT"
 	case NotEqual:
 		return "!="
+	case EqualNull:
+		return "<=>"
 	default:
 		panic("unhandled comparison operator token type: " + fmt.Sprintf("%d,%s", co.Token, co.Val))
 	}

@@ -51,6 +51,8 @@ func (i Item) Inspect() string {
 		tokenName = "Null"
 	case Equals:
 		tokenName = "Equals"
+	case EqualNull:
+		tokenName = "EqualNull"
 	case LessThan:
 		tokenName = "LessThan"
 	case LessThanEquals:

@@ -907,6 +907,7 @@ func (p *Parser) ParseExpression(result *Expression) error {
 	// fmt.Println(items)
 	//todo: write expression
 	if len(items) > 0 {
+		fmt.Println(items)
 		if err := parseSubExpression(result, items); err != nil {
 			return errors.Wrap(err, "Error parsing expression: "+itemsString(items))
 		}
@@ -946,7 +947,7 @@ func (p *Parser) ParseExpression(result *Expression) error {
 // parseSubExpression is called when we know we have an expression.
 func parseSubExpression(result *Expression, items []Item) error {
 	items = withoutWhitespace(items)
-	// fmt.Println("Processing this", items, len(items))
+	fmt.Println("Processing this", items, len(items))
 	// fmt.Println(items[0], items[len(items)-1])
 	// strip parens if start and ends with parens
 	if len(items) >= 3 && items[0].Token == ParenOpen && items[len(items)-1].Token == ParenClose {
@@ -977,8 +978,10 @@ func parseSubExpression(result *Expression, items []Item) error {
 			switch items[i].Token {
 			case ParenOpen:
 				parenCount++
+				fmt.Println("FoundParenOpen", parenCount, i)
 			case ParenClose:
 				parenCount--
+				fmt.Println("FoundParenClose", parenCount, i)
 				if parenCount == 0 {
 					break
 				}
@@ -986,7 +989,8 @@ func parseSubExpression(result *Expression, items []Item) error {
 			i++
 		}
 		//fmt.Println("ParentCount", parenCount)
-		if items[i-1].Token != ParenClose || parenCount > 0 {
+		if parenCount > 0 {
+			//if items[i-1].Token != ParenClose || parenCount > 0 {
 			return errors.New("Opening parenthesis without matching closing parenthesis: " + itemsString(items))
 		}
 	}
@@ -1083,7 +1087,7 @@ func parseSubExpression(result *Expression, items []Item) error {
 		}
 	}
 
-	comparisonOperators := []Token{Equals, GreaterThanEquals, GreaterThan, LessThanEquals, LessThan, NotEqual, IsNot, Is, Like, Regexp, In}
+	comparisonOperators := []Token{Equals, GreaterThanEquals, GreaterThan, LessThanEquals, LessThan, NotEqual, IsNot, Is, Like, Regexp, In, EqualNull}
 	for _, op := range comparisonOperators {
 		if idx := tokenIndex(items, op); idx > 0 {
 			leftItems := items[0:idx]

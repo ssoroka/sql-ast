@@ -3,6 +3,7 @@ package sqlast
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
 	"log"
 	"strings"
@@ -526,7 +527,12 @@ func (s *Scanner) tryKeywords() bool {
 }
 
 func (s *Scanner) tryOperands() bool {
-	if s.tryReadToken("<=") {
+	fmt.Println("tryOperands")
+	if s.tryReadToken("<=>") {
+		fmt.Println("MyOperandFound")
+		s.lastReadItem = Item{EqualNull, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("<=") {
 		s.lastReadItem = Item{LessThanEquals, s.lastReadToken}
 		return true
 	} else if s.tryReadToken("<") {

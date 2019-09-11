@@ -43,6 +43,7 @@ const (
 	Modulus // %
 	ShiftLeft
 	ShiftRight
+	EqualNull
 
 	// misc characters
 	Asterisk

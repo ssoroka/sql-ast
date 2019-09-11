@@ -22,6 +22,37 @@ func TestSimpleSelect(t *testing.T) {
 		t.Error("Unexpected output", ast.String())
 	}
 }
+func TestWhereParenthesis(t *testing.T) {
+	input := "SELECT * FROM ABC WHERE ( (EBBSPRD_AE_ACNOM.ACCOUNTNO = EBBSPRD_AE_ACNOM.ACCOUNTNO) AND EBBSPRD_AE_ACNOM.BLDGNAME > EBBSPRD_AE_ACNOM.TELEPHONENO AND 1=1)"
+	parser := NewParser(strings.NewReader(input))
+	selectStatement := Statement(&SelectStatement{})
+	err := parser.Parse(&selectStatement)
+	if err != nil {
+		t.Log(err.Error())
+		t.Fail()
+	}
+	//pp := selectStatement.(*SelectStatement)
+}
+func TestEqualNotNull(t *testing.T) {
+	input := "SELECT * FROM ABC WHERE  1<=> 1"
+	parser := NewParser(strings.NewReader(input))
+	selectStatement := Statement(&SelectStatement{})
+	err := parser.Parse(&selectStatement)
+	if err != nil {
+		t.Log(err.Error())
+		t.Fail()
+	}
+	//pp := selectStatement.(*SelectStatement)
+	output := selectStatement.String()
+	t.Log(output)
+	outputExpected := `SELECT *
+FROM ABC
+WHERE
+	1 <=> 1`
+	if output != outputExpected {
+		t.Fail()
+	}
+}
 func TestWeirdBoolExpression(t *testing.T) {
 	input := "select * from HHH where TRIM ( RDM_ALL_CTRY_CD_VER1.ISO_IND ) = ''"
 	var ast Statement
