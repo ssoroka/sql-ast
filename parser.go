@@ -1057,8 +1057,18 @@ func parseSubExpression(result *Expression, items []Item) error {
 	logicalOperators := []Token{And, Xor, Or}
 	for _, op := range logicalOperators {
 		if idx := tokenIndex(items, op); idx > 0 {
-			leftItems := items[0:idx]
-			rightItems := items[idx+1 : len(items)]
+			leftItems, cutIndex := GetBaseExpression(items) //items[0:idx]
+			fmt.Println("cutIndex", cutIndex, items[cutIndex])
+			if cutIndex == -1 {
+				fmt.Println("No Right expre Detected")
+				return parseSubExpression(result, leftItems)
+			}
+			rightItems := items[cutIndex+1 : len(items)]
+			fmt.Println("RightExprFound", rightItems)
+			if rightItems[0].Token == And || rightItems[0].Token == Or || rightItems[0].Token == Xor {
+				cutIndex++
+				rightItems = rightItems[1:len(rightItems)]
+			}
 
 			var leftExpression, rightExpression Expression
 			leftExpression = &DummmyExpression{}
@@ -1078,7 +1088,7 @@ func parseSubExpression(result *Expression, items []Item) error {
 			//fmt.Println("items[idx]", items[idx].Inspect())
 			rp := LogicalExpression{
 				Left:     leftExpression,
-				Operator: LogicalOperator{Token: items[idx].Token, Val: items[idx].Val},
+				Operator: LogicalOperator{Token: items[cutIndex].Token, Val: items[cutIndex].Val},
 				Right:    rightExpression,
 			}
 			//fmt.Println("Result", *result)
@@ -1141,7 +1151,27 @@ func parseSubExpression(result *Expression, items []Item) error {
 
 	return errors.New("Couldn't detect expression type: " + fmt.Sprintf("%s", items))
 }
-
+func GetBaseExpression(items []Item) ([]Item, int) {
+	leftExpression := []Item{}
+	parentCount := 0
+	for idx, val := range items {
+		if (val.Token == And || val.Token == Or || val.Token == Xor) && parentCount == 0 {
+			return leftExpression, idx
+		}
+		if val.Token == ParenOpen {
+			parentCount++
+		}
+		if val.Token == ParenClose {
+			parentCount--
+			if parentCount == 0 {
+				leftExpression = append(leftExpression, val)
+				return leftExpression, idx
+			}
+		}
+		leftExpression = append(leftExpression, val)
+	}
+	return leftExpression, -1
+}
 func tokenIndex(items []Item, eq Token) int {
 	for i := range items {
 		if items[i].Token == eq {

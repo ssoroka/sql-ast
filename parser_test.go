@@ -315,6 +315,17 @@ func TestSelectJoinComplex(t *testing.T) {
 	}
 	t.Log(pp)
 }
+func TestParseExpression(t *testing.T) {
+	source := strings.NewReader(`((fieldX = "1"	AND OT.fieldF > 9) OR ODS='@ODS')`)
+	parser3 := NewParser(source)
+	var exprWithODS Expression
+	err2 := parser3.ParseExpression(&exprWithODS)
+	if err2 != nil {
+		t.Fail()
+		t.Log(err2.Error())
+	}
+	t.Log(exprWithODS.String())
+}
 func TestSelectOrderBy(t *testing.T) {
 	source := strings.NewReader("select table1.Field1 from table1 order by field3 asc,field4 desc")
 	parser := NewParser(source)
