@@ -23,7 +23,17 @@ type LogicalExpression struct {
 }
 
 func (le *LogicalExpression) String() string {
-	return le.Left.String() + "\n\t" + strings.ToUpper(le.Operator.Val) + " " + le.Right.String()
+	leftStr := le.Left.String()
+	rightStr := le.Right.String()
+	// switch le.Left.(type) {
+	// case *LogicalExpression:
+	// 	leftStr = "(" + leftStr + ")"
+	// }
+	// switch le.Right.(type) {
+	// case *LogicalExpression:
+	// 	rightStr = "(" + rightStr + ")"
+	// }
+	return leftStr + "\n\t" + strings.ToUpper(le.Operator.Val) + " " + rightStr
 }
 
 // OR, ||, AND, && (not?)

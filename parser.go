@@ -494,7 +494,7 @@ func (p *Parser) Parse(result *Statement) error {
 				//fmt.Println("Found", item.Inspect())
 				p.unscan()
 				break JoinLoop
-			case Join, LeftJoin, RightJoin, InnerJoin, Comma:
+			case Join, LeftJoin, RightJoin, InnerJoin, Comma, RightOuterJoin, LeftOuterJoin:
 				newJoinStatement := &JoinTables{}
 				newJoinStatement.JoinType = item.Val
 				e := p.parseJoin(newJoinStatement, statement)
@@ -951,20 +951,25 @@ func parseSubExpression(result *Expression, items []Item) error {
 	// fmt.Println(items[0], items[len(items)-1])
 	// strip parens if start and ends with parens
 	if len(items) >= 3 && items[0].Token == ParenOpen && items[len(items)-1].Token == ParenClose {
-		var expression Expression
-		//pp := items[1 : len(items)-1]
-		// fmt.Println("Removing parenthesis", items[1:len(items)-1], len(pp))
-		if err := parseSubExpression(&expression, items[1:len(items)-1]); err != nil {
-			return errors.Wrapf(err, "error parsing paren expression: %s", itemsString(items[1:len(items)-1]))
+		leftItems, cutIndex := GetBaseExpression(items)
+		fmt.Println("cutIndex", cutIndex, items[cutIndex], "||", leftItems)
+		if len(leftItems) == len(items) {
+			var expression Expression
+			//pp := items[1 : len(items)-1]
+			// fmt.Println("Removing parenthesis", items[1:len(items)-1], len(pp))
+			if err := parseSubExpression(&expression, items[1:len(items)-1]); err != nil {
+				return errors.Wrapf(err, "error parsing paren expression: %s", itemsString(items[1:len(items)-1]))
+			}
+
+			*result = &ParenExpression{
+				Expression: expression,
+			}
+			if result == nil {
+				fmt.Println("ParenExpresion is nil")
+			}
+			return nil
 		}
 
-		*result = &ParenExpression{
-			Expression: expression,
-		}
-		if result == nil {
-			fmt.Println("ParenExpresion is nil")
-		}
-		return nil
 	}
 
 	if len(items) == 0 {
@@ -1005,7 +1010,7 @@ func parseSubExpression(result *Expression, items []Item) error {
 		}
 	}
 	// fmt.Println(len(items) > 1, items[1].Token == ParenOpen, items[len(items)-1].Token == ParenClose)
-	if len(items) > 1 && items[1].Token == ParenOpen && items[len(items)-1].Token == ParenClose {
+	if len(items) > 1 && items[0].Token != ParenOpen && items[1].Token == ParenOpen && items[len(items)-1].Token == ParenClose {
 		parameters := []Item{}
 		for i, _ := range items {
 			if i <= 1 || i == len(items)-1 {
@@ -1096,7 +1101,6 @@ func parseSubExpression(result *Expression, items []Item) error {
 			return nil
 		}
 	}
-
 	comparisonOperators := []Token{Equals, GreaterThanEquals, GreaterThan, LessThanEquals, LessThan, NotEqual, IsNot, Is, Like, Regexp, In, EqualNull}
 	for _, op := range comparisonOperators {
 		if idx := tokenIndex(items, op); idx > 0 {

@@ -325,6 +325,48 @@ func TestParseExpression(t *testing.T) {
 		t.Log(err2.Error())
 	}
 	t.Log(exprWithODS.String())
+	outputExpected := `((fieldX = "1"
+	AND OT.fieldF > 9)
+	OR ODS = '@ODS')`
+	if outputExpected != exprWithODS.String() {
+		t.Fail()
+		return
+	}
+}
+func TestParseExpression2(t *testing.T) {
+	// t.Skip()
+	source := strings.NewReader(`((fieldX = "1"	AND OT.fieldF > 9) OR (ODS='@ODS'))`)
+	parser3 := NewParser(source)
+	var exprWithODS Expression
+	err2 := parser3.ParseExpression(&exprWithODS)
+	if err2 != nil {
+		t.Fail()
+		t.Log(err2.Error())
+	}
+	t.Log(exprWithODS.String())
+	outputExpected := `((fieldX = "1"
+	AND OT.fieldF > 9)
+	OR (ODS = '@ODS'))`
+	if outputExpected != exprWithODS.String() {
+		t.Fail()
+		return
+	}
+}
+func TestOuterJoin(t *testing.T) {
+	//t.Skip()
+	source := strings.NewReader(`SELECT CURRENCYCODE,COUNTRYCODE,CITYNAME FROM EBBSPRD_BN_SYSTEM
+	LEFT OUTER JOIN EBBSPRD_LK_RELADDR ON ((EBBSPRD_LK_MLITDEL.DEALNO = '1') AND ('2' = '2'))
+	RIGHT OUTER JOIN EBBSPRD_BN_SYSTEM ON (EBBSPRD_LK_MLITDEL.DEALNO = EBBSPRD_LK_MLITDEL.EXPIRYDATE) WHERE (EBBSPRD_LK_MLITDEL.ODACCOUNTNO = EBBSPRD_LK_MLITDEL.ODACCOUNTNO)`)
+	parser := NewParser(source)
+	selectStatement := Statement(&SelectStatement{})
+	err := parser.Parse(&selectStatement)
+	if err != nil {
+		fmt.Println(err.Error())
+		t.Fail()
+		return
+	}
+	pp := selectStatement.(*SelectStatement)
+	t.Log(pp.String())
 }
 func TestSelectOrderBy(t *testing.T) {
 	source := strings.NewReader("select table1.Field1 from table1 order by field3 asc,field4 desc")
@@ -344,6 +386,7 @@ func TestSelectOrderBy(t *testing.T) {
 	t.Log(pp.OrderBy)
 	t.Log(pp)
 }
+
 func TestSelectConcat(t *testing.T) {
 	source := strings.NewReader("select Concat('PP',\"AFK\") from table1 order by field3 asc,field4 desc")
 	parser := NewParser(source)
