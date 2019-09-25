@@ -366,7 +366,45 @@ func TestOuterJoin(t *testing.T) {
 		return
 	}
 	pp := selectStatement.(*SelectStatement)
-	t.Log(pp.String())
+	expected := `SELECT CURRENCYCODE, COUNTRYCODE, CITYNAME
+FROM EBBSPRD_BN_SYSTEM
+	LEFT OUTER JOIN EBBSPRD_LK_RELADDR ON ((EBBSPRD_LK_MLITDEL.DEALNO = '1')
+	AND (2 = '2'))
+	RIGHT OUTER JOIN EBBSPRD_BN_SYSTEM ON (EBBSPRD_LK_MLITDEL.DEALNO = EBBSPRD_LK_MLITDEL.EXPIRYDATE)
+WHERE
+	(EBBSPRD_LK_MLITDEL.ODACCOUNTNO = EBBSPRD_LK_MLITDEL.ODACCOUNTNO)`
+	if pp.String() != expected {
+		t.Error("Not Same, Found ", pp.String())
+		t.Fail()
+		return
+	}
+}
+func TestFullOuterJoin(t *testing.T) {
+	//t.Skip()
+	source := strings.NewReader(`SELECT CURRENCYCODE,COUNTRYCODE,CITYNAME FROM EBBSPRD_BN_SYSTEM
+	FULL OUTER JOIN EBBSPRD_LK_RELADDR ON ((EBBSPRD_LK_MLITDEL.DEALNO = '1') AND ('2' = '2'))
+	FULL INNER JOIN EBBSPRD_BN_SYSTEM ON (EBBSPRD_LK_MLITDEL.DEALNO = EBBSPRD_LK_MLITDEL.EXPIRYDATE) WHERE (EBBSPRD_LK_MLITDEL.ODACCOUNTNO = EBBSPRD_LK_MLITDEL.ODACCOUNTNO)`)
+	parser := NewParser(source)
+	selectStatement := Statement(&SelectStatement{})
+	err := parser.Parse(&selectStatement)
+	if err != nil {
+		fmt.Println(err.Error())
+		t.Fail()
+		return
+	}
+	pp := selectStatement.(*SelectStatement)
+	expected := `SELECT CURRENCYCODE, COUNTRYCODE, CITYNAME
+FROM EBBSPRD_BN_SYSTEM
+	FULL OUTER JOIN EBBSPRD_LK_RELADDR ON ((EBBSPRD_LK_MLITDEL.DEALNO = '1')
+	AND (2 = '2'))
+	FULL INNER JOIN EBBSPRD_BN_SYSTEM ON (EBBSPRD_LK_MLITDEL.DEALNO = EBBSPRD_LK_MLITDEL.EXPIRYDATE)
+WHERE
+	(EBBSPRD_LK_MLITDEL.ODACCOUNTNO = EBBSPRD_LK_MLITDEL.ODACCOUNTNO)`
+	if pp.String() != expected {
+		t.Error("Not Same, Found ", pp.String())
+		t.Fail()
+		return
+	}
 }
 func TestSelectOrderBy(t *testing.T) {
 	source := strings.NewReader("select table1.Field1 from table1 order by field3 asc,field4 desc")

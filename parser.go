@@ -478,7 +478,7 @@ func (p *Parser) Parse(result *Statement) error {
 	}
 
 	if item := p.nextItem(); item.Token == Join || item.Token == LeftJoin || item.Token == RightJoin || item.Token == InnerJoin ||
-		item.Token == RightOuterJoin || item.Token == LeftOuterJoin || item.Token == Comma {
+		item.Token == RightOuterJoin || item.Token == LeftOuterJoin || item.Token == Comma || item.Token == FullOuterJoin || item.Token == FullInnerJoin {
 		//fmt.Println("Join Found")
 		p.unscan()
 		ll := 0
@@ -494,7 +494,7 @@ func (p *Parser) Parse(result *Statement) error {
 				//fmt.Println("Found", item.Inspect())
 				p.unscan()
 				break JoinLoop
-			case Join, LeftJoin, RightJoin, InnerJoin, Comma, RightOuterJoin, LeftOuterJoin:
+			case Join, LeftJoin, RightJoin, InnerJoin, Comma, RightOuterJoin, LeftOuterJoin, FullInnerJoin, FullOuterJoin:
 				newJoinStatement := &JoinTables{}
 				newJoinStatement.JoinType = item.Val
 				e := p.parseJoin(newJoinStatement, statement)
@@ -878,7 +878,7 @@ func (p *Parser) ParseExpression(result *Expression) error {
 				return errors.New("Error, unexpected token " + item.Inspect() + " after WHERE")
 			}
 		case GroupBy, Having, OrderBy, Limit, ForUpdate, EOF, Where, Join, LeftJoin, RightJoin, InnerJoin, Then,
-			LeftOuterJoin, RightOuterJoin:
+			LeftOuterJoin, RightOuterJoin, FullInnerJoin, FullOuterJoin:
 			p.unscan()
 			done = true
 			break
@@ -899,7 +899,7 @@ func (p *Parser) ParseExpression(result *Expression) error {
 		}
 		if item.Token != Where && item.Token != On && item.Token != Join &&
 			item.Token != LeftJoin && item.Token != RightJoin && item.Token != RightOuterJoin && item.Token != LeftOuterJoin && item.Token != Having &&
-			item.Token != InnerJoin && item.Token != OrderBy && item.Token != GroupBy && item.Token != Then && !(item.Token == ParenClose && parentCount < 0) {
+			item.Token != InnerJoin && item.Token != FullInnerJoin && item.Token != FullOuterJoin && item.Token != OrderBy && item.Token != GroupBy && item.Token != Then && !(item.Token == ParenClose && parentCount < 0) {
 			items = append(items, item)
 		}
 

@@ -39,6 +39,10 @@ func (i Item) Inspect() string {
 		tokenName = "RightJoin"
 	case LeftOuterJoin:
 		tokenName = "LeftOuterJoin"
+	case FullOuterJoin:
+		tokenName = "FullOuterJoin"
+	case FullInnerJoin:
+		tokenName = "FullInnerJoin"
 	case RightOuterJoin:
 		tokenName = "RightOuterJoin"
 	case Join:

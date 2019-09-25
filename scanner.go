@@ -479,6 +479,12 @@ func (s *Scanner) tryKeywords() bool {
 	} else if s.tryReadToken("INNER JOIN") {
 		s.lastReadItem = Item{InnerJoin, s.lastReadToken}
 		return true
+	} else if s.tryReadToken("FULL INNER JOIN") {
+		s.lastReadItem = Item{FullInnerJoin, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("FULL OUTER JOIN") {
+		s.lastReadItem = Item{FullOuterJoin, s.lastReadToken}
+		return true
 	} else if s.tryReadToken("ON") {
 		s.lastReadItem = Item{On, s.lastReadToken}
 		return true

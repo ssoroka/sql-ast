@@ -67,6 +67,8 @@ const (
 	RightJoin
 	RightOuterJoin
 	InnerJoin
+	FullInnerJoin
+	FullOuterJoin
 	On
 	Null
 	Case
