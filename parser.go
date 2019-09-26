@@ -878,7 +878,7 @@ func (p *Parser) ParseExpression(result *Expression) error {
 				return errors.New("Error, unexpected token " + item.Inspect() + " after WHERE")
 			}
 		case GroupBy, Having, OrderBy, Limit, ForUpdate, EOF, Where, Join, LeftJoin, RightJoin, InnerJoin, Then,
-			LeftOuterJoin, RightOuterJoin, FullInnerJoin, FullOuterJoin:
+			LeftOuterJoin, RightOuterJoin, FullInnerJoin, FullOuterJoin, Union:
 			p.unscan()
 			done = true
 			break
@@ -899,7 +899,7 @@ func (p *Parser) ParseExpression(result *Expression) error {
 		}
 		if item.Token != Where && item.Token != On && item.Token != Join &&
 			item.Token != LeftJoin && item.Token != RightJoin && item.Token != RightOuterJoin && item.Token != LeftOuterJoin && item.Token != Having &&
-			item.Token != InnerJoin && item.Token != FullInnerJoin && item.Token != FullOuterJoin && item.Token != OrderBy && item.Token != GroupBy && item.Token != Then && !(item.Token == ParenClose && parentCount < 0) {
+			item.Token != InnerJoin && item.Token != FullInnerJoin && item.Token != FullOuterJoin && item.Token != OrderBy && item.Token != GroupBy && item.Token != Then && item.Token != Union && !(item.Token == ParenClose && parentCount < 0) {
 			items = append(items, item)
 		}
 

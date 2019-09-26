@@ -468,3 +468,39 @@ FROM some_table2`
 		t.Error("target", []byte(ast.String()))
 	}
 }
+func TestComplexUnion(t *testing.T) {
+	var ast Statement
+	err := Parse(&ast, `SELECT "SRC" AS SRC, COUNT(*)
+	FROM EBBSPRD_BN_SYSTEM
+		LEFT OUTER JOIN EBBSPRD_LK_RELADDR ON ((EBBSPRD_LK_MLITDEL.DEALNO = '1')
+		AND (2 = '2'))
+		RIGHT OUTER JOIN EBBSPRD_BN_SYSTEM ON (EBBSPRD_LK_MLITDEL.DEALNO = EBBSPRD_LK_MLITDEL.EXPIRYDATE)
+	WHERE
+		(EBBSPRD_LK_MLITDEL.ODACCOUNTNO = EBBSPRD_LK_MLITDEL.ODACCOUNTNO) UNION SELECT "TGT" AS TGT, COUNT(*)
+	FROM LMT_SCTY WHERE PRCS_ID='' AND PROCESS_DATE='@Process_Date' AND DATA_SRC='NA'`)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	if ast == nil {
+		t.Error("Expected AST to be set but it was empty")
+		t.FailNow()
+	}
+	outputTarget := `SELECT "SRC" AS SRC, COUNT(*)
+FROM EBBSPRD_BN_SYSTEM
+	LEFT OUTER JOIN EBBSPRD_LK_RELADDR ON ((EBBSPRD_LK_MLITDEL.DEALNO = '1')
+	AND (2 = '2'))
+	RIGHT OUTER JOIN EBBSPRD_BN_SYSTEM ON (EBBSPRD_LK_MLITDEL.DEALNO = EBBSPRD_LK_MLITDEL.EXPIRYDATE)
+WHERE
+	(EBBSPRD_LK_MLITDEL.ODACCOUNTNO = EBBSPRD_LK_MLITDEL.ODACCOUNTNO) UNION SELECT "TGT" AS TGT, COUNT(*)
+FROM LMT_SCTY
+WHERE
+	PRCS_ID = ''
+	AND PROCESS_DATE = '@Process_Date'
+	AND DATA_SRC = 'NA'`
+	if ast.String() != outputTarget {
+		t.Error("Unexpected output", ast.String())
+		t.Error("target", []byte(outputTarget))
+		t.Error("target", []byte(ast.String()))
+	}
+}
