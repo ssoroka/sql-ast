@@ -35,6 +35,8 @@ func (co *ComparisonOperator) String() string {
 		return "!="
 	case EqualNull:
 		return "<=>"
+	case Like:
+		return " LIKE "
 	default:
 		panic("unhandled comparison operator token type: " + fmt.Sprintf("%d,%s", co.Token, co.Val))
 	}
