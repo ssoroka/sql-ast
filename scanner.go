@@ -488,6 +488,9 @@ func (s *Scanner) tryKeywords() bool {
 	} else if s.tryReadToken("ON") {
 		s.lastReadItem = Item{On, s.lastReadToken}
 		return true
+	} else if s.tryReadToken("LIKE") {
+		s.lastReadItem = Item{Like, s.lastReadToken}
+		return true
 	} else if s.tryReadToken("NOT") {
 		s.lastReadItem = Item{On, s.lastReadToken}
 		return true
