@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime/debug"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -247,7 +248,14 @@ func (s *SubParser) unScan() {
 }
 
 // Parse parses the tokens provided by a scanner (lexer) into an AST
-func (p *Parser) Parse(result *Statement) error {
+func (p *Parser) Parse(result *Statement) (errRet error) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("PANIC", r)
+			fmt.Println("stacktrace from panic: \n" + string(debug.Stack()))
+			errRet = errors.New("Invalid statement while parsing")
+		}
+	}()
 	statement := &SelectStatement{}
 	_ = "breakpoint"
 	parentCountSub := 0
