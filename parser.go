@@ -379,6 +379,10 @@ func (p *Parser) Parse(result *Statement) (errRet error) {
 					statement.ComplexSelects = append(statement.ComplexSelects, newComplexSelect)
 					break CaseWhenLoop1
 				default:
+					newComplexSelect := ComplexSelect{}
+					le := LiteralExpression{item.Token, item.Val}
+					newComplexSelect.StaticValue = le.String()
+					statement.ComplexSelects = append(statement.ComplexSelects, newComplexSelect)
 					p.unscan()
 					break CaseWhenLoop1
 				}
@@ -672,7 +676,7 @@ AggrLoop:
 				result.Params = append(result.Params, item)
 				break AggrLoop
 			}
-
+			result.Params = append(result.Params, item)
 		case Identifier, Multiply, Asterisk:
 			if !parentOpenFound {
 				return errors.New("Identifier found befor open parenthesis")

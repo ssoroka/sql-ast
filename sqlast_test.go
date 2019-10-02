@@ -482,6 +482,24 @@ func TestSomething(t *testing.T) {
 	}
 	t.Log(ast.String())
 }
+func TestBase2(t *testing.T) {
+	var ast Statement
+	err := Parse(&ast, `SELECT "SRC" from X`)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	if ast == nil {
+		t.Error("Expected AST to be set but it was empty")
+		t.FailNow()
+	}
+	t.Log(ast.String())
+	expected := `SELECT "SRC"
+FROM X`
+	if expected != ast.String() {
+		t.Fail()
+	}
+}
 func TestComplexUnion(t *testing.T) {
 	var ast Statement
 	err := Parse(&ast, `SELECT "SRC" AS SRC, COUNT(*)
