@@ -452,6 +452,53 @@ Order By
 		return
 	}
 }
+func TestIsNull(t *testing.T) {
+	source := strings.NewReader(`select * from patient where (x IS NULL OR y IS NULL) AND g>10`)
+	parser := NewParser(source)
+	selectStatement := Statement(&SelectStatement{})
+	err := parser.Parse(&selectStatement)
+	if err != nil {
+		t.Fail()
+		fmt.Println(err.Error())
+		return
+	}
+	expectedOutput := `SELECT *
+FROM patient
+WHERE
+	(x IS NULL
+	OR y IS NULL)
+	AND g > 10`
+	pp := selectStatement.(*SelectStatement)
+	if pp.String() != expectedOutput {
+		t.Error("Unexpected output, got", pp.String(), "expected", expectedOutput)
+		t.Fail()
+
+	}
+}
+func TestSomething2(t *testing.T) {
+	source := strings.NewReader(`SELECT
+	CMT_ALL_BCA_LARGEEXPOSURE_DETAILS.*
+	FROM
+	CMT_ALL_BCA_LARGEEXPOSURE_DETAILS
+	LEFT OUTER JOIN PeTe ON PeTe.PeKa = CMT_ALL_BCA_LARGEEXPOSURE_DETAILS.ATTR_A
+	AND PeTe.PROCESS_DATE = '@Process_Date'
+	AND CMT_ALL_BCA_LARGEEXPOSURE_DETAILS.PROCESS_DATE = '@Process_Date'
+	LEFT OUTER JOIN PeTeX ON PeTeX.PeKaX = CMT_ALL_BCA_LARGEEXPOSURE_DETAILS.ATTR_C
+	AND PeTeX.PROCESS_DATE = '@Process_Date'
+	AND CMT_ALL_BCA_LARGEEXPOSURE_DETAILS.PROCESS_DATE = '@Process_Date'
+	WHERE
+	PeTe.PeKa IS NULL
+	AND PeTeX.PeKaX IS NULL`)
+	parser := NewParser(source)
+	selectStatement := Statement(&SelectStatement{})
+	err := parser.Parse(&selectStatement)
+	if err != nil {
+		t.Fail()
+		fmt.Println(err.Error())
+		return
+	}
+	t.Log(selectStatement.String())
+}
 func TestMultiOver(t *testing.T) {
 	source := strings.NewReader(`select pat_id, 
 	dept_id, 

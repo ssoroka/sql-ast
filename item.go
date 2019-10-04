@@ -87,6 +87,8 @@ func (i Item) Inspect() string {
 		tokenName = "ParenOpen"
 	case ParenClose:
 		tokenName = "ParenClose"
+	case Multiply:
+		tokenName = "Multiply"
 
 	case Select:
 		tokenName = "Select"

@@ -296,6 +296,14 @@ func (p *Parser) Parse(result *Statement) (errRet error) {
 			if p.DetectFieldAlias(statement, item) {
 				newComplexSelect.Alias = statement.SelectAl[len(statement.SelectAl)-1].Alias
 			}
+			//test if there are dot
+			isDot := p.nextItem()
+			fmt.Println(">>>", isDot.Token)
+			if isDot.Token == Multiply {
+				newComplexSelect.FieldName += "*"
+			} else {
+				p.unscan()
+			}
 			statement.ComplexSelects = append(statement.ComplexSelects, newComplexSelect)
 		case Multiply: // special case for now.
 			statement.Fields = append(statement.Fields, "*")
