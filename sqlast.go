@@ -33,6 +33,7 @@ const (
 	Is
 	Not
 	IsNot
+	IsNotIn
 	Like
 	Regexp
 	In

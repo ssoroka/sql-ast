@@ -452,6 +452,23 @@ Order By
 		return
 	}
 }
+func TestQuoteSS(t *testing.T) {
+	source := strings.NewReader(`TARGET_ATTR IS NOT IN ('-1')`)
+	parser := NewParser(source)
+	//selectStatement := Statement(&SelectStatement{})
+	var JJ Expression
+	err := parser.ParseExpression(&JJ)
+	if err != nil {
+		t.Fail()
+		fmt.Println(err.Error())
+		return
+	}
+	expectedOutput := `TARGET_ATTR IS NOT IN ('-1')`
+	if JJ.String() != expectedOutput {
+		t.Fail()
+	}
+	//t.Log(JJ.String())
+}
 func TestIsNull(t *testing.T) {
 	source := strings.NewReader(`select * from patient where (x IS NULL OR y IS NULL) AND g>10`)
 	parser := NewParser(source)

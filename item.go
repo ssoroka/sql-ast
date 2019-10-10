@@ -77,6 +77,8 @@ func (i Item) Inspect() string {
 		tokenName = "Not"
 	case IsNot:
 		tokenName = "IsNot"
+	case IsNotIn:
+		tokenName = "IsNotIn"
 	case Asterisk:
 		tokenName = "Asterisk"
 	case Comma:

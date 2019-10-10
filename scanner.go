@@ -580,6 +580,9 @@ func (s *Scanner) tryOperands() bool {
 	} else if s.tryReadToken("XOR") {
 		s.lastReadItem = Item{Xor, s.lastReadToken}
 		return true
+	} else if s.tryReadToken("IS NOT IN") {
+		s.lastReadItem = Item{IsNotIn, s.lastReadToken}
+		return true
 	} else if s.tryReadToken("IS NOT") {
 		s.lastReadItem = Item{IsNot, s.lastReadToken}
 		return true

@@ -31,6 +31,8 @@ func (co *ComparisonOperator) String() string {
 		return "NOT"
 	case IsNot:
 		return "IS NOT"
+	case IsNotIn:
+		return "IS NOT IN"
 	case NotEqual:
 		return "!="
 	case EqualNull:
