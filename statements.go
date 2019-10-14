@@ -67,6 +67,7 @@ func (c *UnionStatement) String() string {
 
 type ComplexSelect struct {
 	Alias          string
+	HasAs          bool
 	FieldName      string
 	AggregateField *Aggregate
 	CaseStatement  *CaseField
@@ -85,13 +86,19 @@ func (c *ComplexSelect) String() string {
 		buff.WriteString(c.StaticValue)
 	}
 	if c.Alias != "" {
-		buff.WriteString(" AS " + c.Alias)
+		if c.HasAs {
+			buff.WriteString(" AS " + c.Alias)
+		} else {
+			buff.WriteString(" " + c.Alias)
+		}
+
 	}
 	return buff.String()
 }
 
 type ComplexTable struct {
 	Alias     string
+	UseAs     bool
 	SubSelect *SelectStatement
 	TableName string
 }
@@ -104,13 +111,19 @@ func (t *ComplexTable) String() string {
 		buff.WriteString(fmt.Sprintf("(%s)", t.SubSelect.String()))
 	}
 	if t.Alias != "" {
-		buff.WriteString(" AS " + t.Alias)
+		if t.UseAs {
+			buff.WriteString(" AS " + t.Alias)
+		} else {
+			buff.WriteString(" " + t.Alias)
+		}
+
 	}
 	return buff.String()
 }
 
 type CaseField struct {
 	Alias           string
+	HasAs           bool
 	FieldIdentifier string
 	WhenCond        []WhenCond
 	ElseCond        string
@@ -130,7 +143,12 @@ func (c *CaseField) String() string {
 	}
 	buffer.WriteString("END")
 	if c.Alias != "" {
-		buffer.WriteString(" AS " + c.Alias)
+		if c.HasAs {
+			buffer.WriteString(" AS " + c.Alias)
+		} else {
+			buffer.WriteString(" " + c.Alias)
+		}
+
 	}
 	buffer.WriteString("\n")
 	return buffer.String()
@@ -196,6 +214,7 @@ type JoinTables struct {
 	TableName   string
 	SubSelect   *SelectStatement
 	Alias       string
+	HasAs       bool
 	OnCondition Expression
 }
 
@@ -208,7 +227,12 @@ func (j *JoinTables) String() string {
 		buff.WriteString(" (" + j.SubSelect.String() + ")")
 	}
 	if j.Alias != "" {
-		buff.WriteString(" AS " + j.Alias)
+		if j.HasAs {
+			buff.WriteString(" AS " + j.Alias)
+		} else {
+			buff.WriteString(" " + j.Alias)
+		}
+
 	}
 	if j.JoinType != "," && j.OnCondition != nil {
 		buff.WriteString(" ON " + j.OnCondition.String())

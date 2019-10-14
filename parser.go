@@ -59,7 +59,9 @@ func (p *Parser) nextItem() Item {
 	}
 	return item
 }
-func (p *Parser) DetectFieldAlias(result *SelectStatement, item Item) bool {
+
+// detect if alias is found and whether it has AS before alias
+func (p *Parser) DetectFieldAlias(result *SelectStatement, item Item) (bool, bool) {
 	var nextItem Item
 	var FoundAlias bool
 detectAliasLoop:
@@ -72,10 +74,12 @@ detectAliasLoop:
 	switch nextItem.Token {
 	case Comma:
 		p.unscan()
-		return FoundAlias
+		return FoundAlias, false
 	case Identifier, As: // we found indication of alias
+		hasAs := false
 		if nextItem.Token == Identifier {
 			FoundAlias = true
+			hasAs = false
 			newAlias := SelectAlias{item.Val, nextItem.Val}
 			result.SelectAl = append(result.SelectAl, newAlias)
 		} else {
@@ -88,6 +92,7 @@ detectAliasLoop:
 				case Identifier:
 					FoundAlias = true
 					newAlias := SelectAlias{item.Val, ii.Val}
+					hasAs = true
 					result.SelectAl = append(result.SelectAl, newAlias)
 					break identifierLookup
 				default:
@@ -96,14 +101,16 @@ detectAliasLoop:
 				}
 			}
 		}
-		return FoundAlias
+		return FoundAlias, hasAs
 	default:
 		p.unscan()
-		return FoundAlias
+		return FoundAlias, false
 	}
 	//return FoundAlias
 }
-func (p *Parser) DetectTableAlias(result *SelectStatement, item Item) bool {
+
+// detect if alias is found and whether it has AS before alias
+func (p *Parser) DetectTableAlias(result *SelectStatement, item Item) (bool, bool) {
 	var nextItem Item
 detectAliasLoop:
 	for {
@@ -117,7 +124,7 @@ detectAliasLoop:
 		if nextItem.Token == Identifier {
 			newAlias := TableAlias{item.Val, nextItem.Val}
 			result.TableAl = append(result.TableAl, newAlias)
-			return true
+			return true, false
 		} else {
 		identifierLookup:
 			for {
@@ -128,7 +135,7 @@ detectAliasLoop:
 				case Identifier:
 					newAlias := TableAlias{item.Val, ii.Val}
 					result.TableAl = append(result.TableAl, newAlias)
-					return true
+					return true, true
 					//break identifierLookup
 				default:
 					p.unscan()
@@ -136,11 +143,11 @@ detectAliasLoop:
 				}
 			}
 		}
-		return false
+		return false, false
 
 	default:
 		p.unscan()
-		return false
+		return false, false
 	}
 	//return false
 }
@@ -293,12 +300,14 @@ func (p *Parser) Parse(result *Statement) (errRet error) {
 			newComplexSelect := ComplexSelect{}
 			newComplexSelect.FieldName = item.Val
 			//fmt.Println("FoundIdentifier", item.Val)
-			if p.DetectFieldAlias(statement, item) {
+			var detected, hasAs bool
+			if detected, hasAs = p.DetectFieldAlias(statement, item); detected {
 				newComplexSelect.Alias = statement.SelectAl[len(statement.SelectAl)-1].Alias
+				newComplexSelect.HasAs = hasAs
 			}
 			//test if there are dot
 			isDot := p.nextItem()
-			fmt.Println(">>>", isDot.Token)
+			//fmt.Println(">>>", isDot.Token)
 			if isDot.Token == Multiply {
 				newComplexSelect.FieldName += "*"
 			} else {
@@ -349,8 +358,10 @@ func (p *Parser) Parse(result *Statement) (errRet error) {
 			pItem := Item{item.Token, ag.String()}
 			newComplexSelect := ComplexSelect{}
 			newComplexSelect.AggregateField = &ag
-			if p.DetectFieldAlias(statement, pItem) {
+			var detected, hasAs bool
+			if detected, hasAs = p.DetectFieldAlias(statement, pItem); detected {
 				newComplexSelect.Alias = statement.SelectAl[len(statement.SelectAl)-1].Alias
+				newComplexSelect.HasAs = hasAs
 			}
 			statement.ComplexSelects = append(statement.ComplexSelects, newComplexSelect)
 		case QuotedString, SinglQuotedString:
@@ -380,9 +391,11 @@ func (p *Parser) Parse(result *Statement) (errRet error) {
 					newComplexSelect := ComplexSelect{}
 					le := LiteralExpression{item.Token, item.Val}
 					newComplexSelect.StaticValue = le.String()
-					if p.DetectFieldAlias(statement, item) {
+					var detected, hasAs bool
+					if detected, hasAs = p.DetectFieldAlias(statement, item); detected {
 						//fmt.Println("Alias Found")
 						newComplexSelect.Alias = statement.SelectAl[len(statement.SelectAl)-1].Alias
+						newComplexSelect.HasAs = hasAs
 					}
 					statement.ComplexSelects = append(statement.ComplexSelects, newComplexSelect)
 					break CaseWhenLoop1
@@ -412,6 +425,7 @@ func (p *Parser) Parse(result *Statement) (errRet error) {
 					if nitem.Token == Identifier {
 						statement.CaseFields[len(statement.CaseFields)-1].Alias = nitem.Val
 						statement.ComplexSelects[len(statement.ComplexSelects)-1].Alias = nitem.Val
+						statement.ComplexSelects[len(statement.ComplexSelects)-1].HasAs = false
 					} else {
 					detectAlias:
 						for {
@@ -420,6 +434,7 @@ func (p *Parser) Parse(result *Statement) (errRet error) {
 							case Identifier:
 								statement.CaseFields[len(statement.CaseFields)-1].Alias = n2.Val
 								statement.ComplexSelects[len(statement.ComplexSelects)-1].Alias = n2.Val
+								statement.ComplexSelects[len(statement.ComplexSelects)-1].HasAs = true
 								break detectAlias
 							default:
 								p.unscan()
@@ -458,8 +473,10 @@ func (p *Parser) Parse(result *Statement) (errRet error) {
 		pTable.Token = Identifier
 		pTable.Val = item.Val
 		complexTable := ComplexTable{}
-		if p.DetectTableAlias(statement, pTable) {
+		var detected, hasAs bool
+		if detected, hasAs = p.DetectTableAlias(statement, pTable); detected {
 			complexTable.Alias = statement.TableAl[len(statement.TableAl)-1].Alias
+			complexTable.UseAs = hasAs
 		}
 		complexTable.TableName = item.Val
 		statement.ComplexFrom = complexTable
@@ -473,8 +490,10 @@ func (p *Parser) Parse(result *Statement) (errRet error) {
 		pTable := Item{}
 		pTable.Token = Identifier
 		complexTable := ComplexTable{}
-		if p.DetectTableAlias(statement, pTable) {
+		var detected, hasAs bool
+		if detected, hasAs = p.DetectTableAlias(statement, pTable); detected {
 			complexTable.Alias = statement.TableAl[len(statement.TableAl)-1].Alias
+			complexTable.UseAs = hasAs
 		}
 
 		complexTable.SubSelect = (newSubStatement.(*SelectStatement))
@@ -809,8 +828,10 @@ func (p *Parser) parseJoin(result *JoinTables, statement *SelectStatement) error
 		pTable := Item{}
 		pTable.Token = Identifier
 		pTable.Val = tableName.Val
-		if p.DetectTableAlias(statement, pTable) {
+		var detected, hasAs bool
+		if detected, hasAs = p.DetectTableAlias(statement, pTable); detected {
 			result.Alias = statement.TableAl[len(statement.TableAl)-1].Alias
+			result.HasAs = hasAs
 		}
 		log.Debug(tableName.Val)
 		result.TableName = tableName.Val
@@ -846,8 +867,10 @@ func (p *Parser) parseJoin(result *JoinTables, statement *SelectStatement) error
 		pTable := Item{}
 		pTable.Token = Identifier
 		pTable.Val = tableName.Val
-		if p.DetectTableAlias(statement, pTable) {
+		var detected, hasAs bool
+		if detected, hasAs = p.DetectTableAlias(statement, pTable); detected {
 			result.Alias = statement.TableAl[len(statement.TableAl)-1].Alias
+			result.HasAs = hasAs
 		}
 		result.SubSelect = subStatement.(*SelectStatement)
 		if result.JoinType == "," {
@@ -867,7 +890,7 @@ func (p *Parser) parseJoin(result *JoinTables, statement *SelectStatement) error
 // parseConditional detects the "where" or "on" clause and processes it, if any.
 func (p *Parser) parseConditional(result *Expression) error {
 	if item := p.nextItem(); item.Token != Where && item.Token != On {
-		fmt.Println("Where or On not found", item)
+		//fmt.Println("Where or On not found", item)
 		p.unscan()
 		return nil
 	}
@@ -915,7 +938,7 @@ func (p *Parser) ParseExpression(result *Expression) error {
 				break
 			}
 		default:
-			fmt.Println("Parser Warning: Unhandled token", item.Inspect())
+			//fmt.Println("Parser Warning: Unhandled token", item.Inspect())
 		}
 		if item.Token != Where && item.Token != On && item.Token != Join &&
 			item.Token != LeftJoin && item.Token != RightJoin && item.Token != RightOuterJoin && item.Token != LeftOuterJoin && item.Token != Having &&
@@ -927,7 +950,7 @@ func (p *Parser) ParseExpression(result *Expression) error {
 	// fmt.Println(items)
 	//todo: write expression
 	if len(items) > 0 {
-		fmt.Println(items)
+		//fmt.Println(items)
 		if err := parseSubExpression(result, items); err != nil {
 			return errors.Wrap(err, "Error parsing expression: "+itemsString(items))
 		}
@@ -967,12 +990,12 @@ func (p *Parser) ParseExpression(result *Expression) error {
 // parseSubExpression is called when we know we have an expression.
 func parseSubExpression(result *Expression, items []Item) error {
 	items = withoutWhitespace(items)
-	fmt.Println("Processing this", items, len(items))
+	//fmt.Println("Processing this", items, len(items))
 	// fmt.Println(items[0], items[len(items)-1])
 	// strip parens if start and ends with parens
 	if len(items) >= 3 && items[0].Token == ParenOpen && items[len(items)-1].Token == ParenClose {
-		leftItems, cutIndex := GetBaseExpression(items)
-		fmt.Println("cutIndex", cutIndex, items[cutIndex], "||", leftItems)
+		leftItems, _ := GetBaseExpression(items)
+		//fmt.Println("cutIndex", cutIndex, items[cutIndex], "||", leftItems)
 		if len(leftItems) == len(items) {
 			var expression Expression
 			//pp := items[1 : len(items)-1]
@@ -1003,10 +1026,10 @@ func parseSubExpression(result *Expression, items []Item) error {
 			switch items[i].Token {
 			case ParenOpen:
 				parenCount++
-				fmt.Println("FoundParenOpen", parenCount, i)
+				//fmt.Println("FoundParenOpen", parenCount, i)
 			case ParenClose:
 				parenCount--
-				fmt.Println("FoundParenClose", parenCount, i)
+				//fmt.Println("FoundParenClose", parenCount, i)
 				if parenCount == 0 {
 					break
 				}
@@ -1083,13 +1106,13 @@ func parseSubExpression(result *Expression, items []Item) error {
 	for _, op := range logicalOperators {
 		if idx := tokenIndex(items, op); idx > 0 {
 			leftItems, cutIndex := GetBaseExpression(items) //items[0:idx]
-			fmt.Println("cutIndex", cutIndex, items[cutIndex])
+			//fmt.Println("cutIndex", cutIndex, items[cutIndex])
 			if cutIndex == -1 {
 				fmt.Println("No Right expre Detected")
 				return parseSubExpression(result, leftItems)
 			}
 			rightItems := items[cutIndex+1 : len(items)]
-			fmt.Println("RightExprFound", rightItems)
+			//fmt.Println("RightExprFound", rightItems)
 			if rightItems[0].Token == And || rightItems[0].Token == Or || rightItems[0].Token == Xor {
 				cutIndex++
 				rightItems = rightItems[1:len(rightItems)]

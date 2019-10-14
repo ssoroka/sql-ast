@@ -82,7 +82,7 @@ func TestAliasField(t *testing.T) {
 		fmt.Println(err.Error())
 		os.Exit(-1)
 	}
-	output := `SELECT table1.field1, sum(table1.field1) AS v1, avg(table2.field2) AS v2, table2.field2 AS b2
+	output := `SELECT table1.field1, sum(table1.field1) AS v1, avg(table2.field2) v2, table2.field2 b2
 FROM table1
 WHERE
 	table1.field1 >= 20
@@ -222,7 +222,7 @@ func TestCaseSelect2(t *testing.T) {
 	AND years < 50 THEN "yes"
 	 ELSE NULL
 END
- AS is_a_senior
+ is_a_senior
 FROM benn.college_football_players`
 	pp := selectStatement.(*SelectStatement)
 	if len(pp.CaseFields) == 0 {
@@ -256,7 +256,7 @@ func TestSelectStringSingleQuote(t *testing.T) {
 		t.Error("Error Parsing field")
 		t.Fail()
 	}
-	output := `SELECT '' AS f1, "pp" AS LU
+	output := `SELECT '' AS f1, "pp" LU
 FROM MM`
 	if pp.String() != output {
 		t.Errorf("Output is Different, Expecting %s but got %s instead", output, pp.String())
@@ -603,7 +603,7 @@ func TestNewAggregate1(t *testing.T) {
 
 	//t.Log(pp)
 	expectedOutput := `SELECT explode(riskcode), cast(masterno As int), LPAD('LL','oo',3), split(aa,'b'), Substr(aa,bb,4), Lpad(a,b,c), regex_replace("(AS)","SS","II"), Substring(aa,bb,4), UPPER('SS')
-FROM PREFIX2_RSKIND AS RSKND`
+FROM PREFIX2_RSKIND RSKND`
 	if pp.String() != expectedOutput {
 		t.Error("Unexpected output, got", pp.String(), "expected", expectedOutput)
 		t.Fail()
@@ -627,7 +627,7 @@ func TestRowNumOver(t *testing.T) {
 	}
 	//t.Log(pp)
 	expectedOutput := `SELECT riskcode, masterno, row_number() OVER (PARTITION BY masterno ORDER BY seqno) AS max_row
-FROM PREFIX2_RSKIND AS RSKND`
+FROM PREFIX2_RSKIND RSKND`
 	if pp.String() != expectedOutput {
 		t.Error("Unexpected output, got", pp.String(), "expected", expectedOutput)
 		t.Fail()
