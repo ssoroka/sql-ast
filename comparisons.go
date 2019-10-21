@@ -47,6 +47,8 @@ func (co *ComparisonOperator) String() string {
 		return " IS NOT LIKE "
 	case RLike:
 		return " RLIKE "
+	case NotRLike:
+		return " NOT RLIKE "
 	case Between:
 		return " BETWEEN "
 	case NotBetween:

@@ -1,8 +1,11 @@
 package sqlast
 
 import (
+	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestSimpleSelect(t *testing.T) {
@@ -347,6 +350,47 @@ WHERE
 	OR q >= 3)`
 	if ast.String() != expectedOutput {
 		t.Error("Unexpected output, got", ast.String(), "expected", expectedOutput)
+	}
+}
+
+func TestNot(t *testing.T) {
+	space := regexp.MustCompile(`\s+`)
+
+	var ast Statement
+	// not null
+	{
+		err := Parse(&ast, `select 1 FROM some_other_table where a = "giraffe" and b = true AND (q is not null or q >= 3)`)
+		require.Nil(t, err, "err Must nil")
+		expectedOutput := `SELECT 1 FROM some_other_table WHERE a = "giraffe" AND b = TRUE AND (q IS NOT NULL OR q >= 3)`
+		actualOutput := space.ReplaceAllString(ast.String(), " ")
+		require.Equal(t, expectedOutput, actualOutput, "Output must same")
+	}
+
+	// not like
+	{
+		err := Parse(&ast, `select 1 FROM some_other_table where a = "giraffe" and b = true AND (q not like "" or q >= 3)`)
+		require.Nil(t, err, "err Must nil")
+		expectedOutput := `SELECT 1 FROM some_other_table WHERE a = "giraffe" AND b = TRUE AND (q NOT LIKE "" OR q >= 3)`
+		actualOutput := space.ReplaceAllString(ast.String(), " ")
+		require.Equal(t, expectedOutput, actualOutput, "Output must same")
+	}
+
+	// not rlike
+	{
+		err := Parse(&ast, `select 1 FROM some_other_table where a = "giraffe" and b = true AND (q not rlike "" or q >= 3)`)
+		require.Nil(t, err, "err Must nil")
+		expectedOutput := `SELECT 1 FROM some_other_table WHERE a = "giraffe" AND b = TRUE AND (q NOT RLIKE "" OR q >= 3)`
+		actualOutput := space.ReplaceAllString(ast.String(), " ")
+		require.Equal(t, expectedOutput, actualOutput, "Output must same")
+	}
+
+	// not between
+	{
+		err := Parse(&ast, `select 1 FROM some_other_table where a = "giraffe" and b = true AND (q not between '2019-10-10' and '2019-12-12' or q >= 3)`)
+		require.Nil(t, err, "err Must nil")
+		expectedOutput := `SELECT 1 FROM some_other_table WHERE a = "giraffe" AND b = TRUE AND (q NOT BETWEEN '2019-10-10' AND '2019-12-12' OR q >= 3)`
+		actualOutput := space.ReplaceAllString(ast.String(), " ")
+		require.Equal(t, expectedOutput, actualOutput, "Output must same")
 	}
 }
 

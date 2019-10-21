@@ -39,6 +39,7 @@ const (
 	NotLike
 	IsNotLike
 	RLike
+	NotRLike
 	Regexp
 	In
 	Multiply

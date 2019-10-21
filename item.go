@@ -85,6 +85,8 @@ func (i Item) Inspect() string {
 		tokenName = "NotLike"
 	case RLike:
 		tokenName = "RLike"
+	case NotRLike:
+		tokenName = "NotRLike"
 	case Asterisk:
 		tokenName = "Asterisk"
 	case Comma:
