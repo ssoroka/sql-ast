@@ -1172,7 +1172,7 @@ func parseSubExpression(result *Expression, items []Item) error {
 			return nil
 		}
 	}
-	comparisonOperators := []Token{Equals, GreaterThanEquals, GreaterThan, LessThanEquals, LessThan, NotEqual, IsNot, IsNotIn, Is, Like, Regexp, In, EqualNull, Between, NotBetween}
+	comparisonOperators := []Token{Equals, GreaterThanEquals, GreaterThan, LessThanEquals, LessThan, NotEqual, NotEqualSynonim, IsNot, IsNotIn, Is, Like, NotLike, IsNotLike, RLike, Regexp, In, EqualNull, Between, NotBetween}
 	for _, op := range comparisonOperators {
 		if idx := tokenIndex(items, op); idx > 0 {
 			leftItems := items[0:idx]

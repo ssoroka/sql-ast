@@ -487,8 +487,17 @@ func (s *Scanner) tryKeywords() bool {
 	} else if s.tryReadToken("ON") {
 		s.lastReadItem = Item{On, s.lastReadToken}
 		return true
+	} else if s.tryReadToken("RLIKE") {
+		s.lastReadItem = Item{RLike, s.lastReadToken}
+		return true
 	} else if s.tryReadToken("LIKE") {
 		s.lastReadItem = Item{Like, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("NOT LIKE") {
+		s.lastReadItem = Item{NotLike, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("IS NOT LIKE") {
+		s.lastReadItem = Item{IsNotLike, s.lastReadToken}
 		return true
 	} else if s.tryReadToken("NOT BETWEEN") {
 		s.lastReadItem = Item{NotBetween, s.lastReadToken}
@@ -546,6 +555,9 @@ func (s *Scanner) tryOperands() bool {
 		//fmt.Println("MyOperandFound")
 		s.lastReadItem = Item{EqualNull, s.lastReadToken}
 		return true
+	} else if s.tryReadToken("<>") {
+		s.lastReadItem = Item{NotEqualSynonim, s.lastReadToken}
+		return true
 	} else if s.tryReadToken("<=") {
 		s.lastReadItem = Item{LessThanEquals, s.lastReadToken}
 		return true
@@ -590,6 +602,9 @@ func (s *Scanner) tryOperands() bool {
 		return true
 	} else if s.tryReadToken("IS NOT IN") {
 		s.lastReadItem = Item{IsNotIn, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("IS NOT LIKE") {
+		s.lastReadItem = Item{IsNotLike, s.lastReadToken}
 		return true
 	} else if s.tryReadToken("IS NOT") {
 		s.lastReadItem = Item{IsNot, s.lastReadToken}

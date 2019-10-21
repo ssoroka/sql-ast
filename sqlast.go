@@ -21,6 +21,7 @@ const (
 	// Operators
 	Equals
 	NotEqual
+	NotEqualSynonim
 	LessThan
 	LessThanEquals
 	GreaterThan
@@ -35,6 +36,9 @@ const (
 	IsNot
 	IsNotIn
 	Like
+	NotLike
+	IsNotLike
+	RLike
 	Regexp
 	In
 	Multiply

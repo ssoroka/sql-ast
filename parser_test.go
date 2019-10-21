@@ -582,6 +582,27 @@ WHERE
 		t.Fail()
 	}
 }
+func TestNotLike(t *testing.T) {
+	var ast Statement
+	err := Parse(&ast, `select 1 FROM some_other_table where a = "giraffe" and b = true AND (q is not like "" or q >= 3)`)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	expectedOutput := `SELECT 1
+FROM some_other_table
+WHERE
+	a = "giraffe"
+	AND b = TRUE
+	AND (q  IS NOT LIKE  ""
+	OR q >= 3)`
+	ll := ast.String()
+	if ll != expectedOutput {
+		t.Error("Unexpected output, got", ast.String(), "expected", expectedOutput)
+		t.Log([]byte(ll))
+		t.Log([]byte(expectedOutput))
+	}
+}
 func TestPartialCase(t *testing.T) {
 	source := strings.NewReader(`CASE ProductLine
 	WHEN 'R' THEN 'Road'

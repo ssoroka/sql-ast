@@ -79,6 +79,12 @@ func (i Item) Inspect() string {
 		tokenName = "IsNot"
 	case IsNotIn:
 		tokenName = "IsNotIn"
+	case Like:
+		tokenName = "Like"
+	case NotLike:
+		tokenName = "NotLike"
+	case RLike:
+		tokenName = "RLike"
 	case Asterisk:
 		tokenName = "Asterisk"
 	case Comma:
@@ -158,6 +164,8 @@ func (i Item) Inspect() string {
 		tokenName = "When"
 	case End:
 		tokenName = "End"
+	case NotEqualSynonim:
+		tokenName = "NotEqualSynonim"
 	case NotEqual:
 		tokenName = "NotEqual"
 	case SinglQuotedString:

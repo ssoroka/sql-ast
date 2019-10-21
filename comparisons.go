@@ -15,6 +15,8 @@ type ComparisonOperator struct {
 
 func (co *ComparisonOperator) String() string {
 	switch co.Token {
+	case NotEqualSynonim:
+		return "<>"
 	case Equals:
 		return "="
 	case GreaterThan:
@@ -39,6 +41,12 @@ func (co *ComparisonOperator) String() string {
 		return "<=>"
 	case Like:
 		return " LIKE "
+	case NotLike:
+		return " NOT LIKE "
+	case IsNotLike:
+		return " IS NOT LIKE "
+	case RLike:
+		return " RLIKE "
 	case Between:
 		return " BETWEEN "
 	case NotBetween:
