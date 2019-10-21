@@ -39,6 +39,10 @@ func (co *ComparisonOperator) String() string {
 		return "<=>"
 	case Like:
 		return " LIKE "
+	case Between:
+		return " BETWEEN "
+	case NotBetween:
+		return " NOT BETWEEN "
 	default:
 		panic("unhandled comparison operator token type: " + fmt.Sprintf("%d,%s", co.Token, co.Val))
 	}

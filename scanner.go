@@ -490,8 +490,14 @@ func (s *Scanner) tryKeywords() bool {
 	} else if s.tryReadToken("LIKE") {
 		s.lastReadItem = Item{Like, s.lastReadToken}
 		return true
+	} else if s.tryReadToken("NOT BETWEEN") {
+		s.lastReadItem = Item{NotBetween, s.lastReadToken}
+		return true
 	} else if s.tryReadToken("NOT") {
-		s.lastReadItem = Item{On, s.lastReadToken}
+		s.lastReadItem = Item{Not, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("BETWEEN") {
+		s.lastReadItem = Item{Between, s.lastReadToken}
 		return true
 	} else if s.tryReadToken("FOR UPDATE") {
 		s.lastReadItem = Item{ForUpdate, s.lastReadToken}
@@ -561,6 +567,9 @@ func (s *Scanner) tryOperands() bool {
 	} else if s.tryReadToken("!") {
 		s.lastReadItem = Item{Not, s.lastReadToken}
 		return true
+	} else if s.tryReadToken("NOT BETWEEN") {
+		s.lastReadItem = Item{NotBetween, s.lastReadToken}
+		return true
 	} else if s.tryReadToken("NOT") {
 		s.lastReadItem = Item{Not, s.lastReadToken}
 		return true
@@ -608,6 +617,9 @@ func (s *Scanner) tryOperands() bool {
 		return true
 	} else if s.tryReadToken("%") {
 		s.lastReadItem = Item{Modulus, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("BETWEEN") {
+		s.lastReadItem = Item{Between, s.lastReadToken}
 		return true
 	}
 	return false

@@ -560,6 +560,28 @@ FROM table`
 
 	}
 }
+func TestBetween(t *testing.T) {
+	source := strings.NewReader(`select * from HH where JJJ not between 50 AND 90`)
+	parser := NewParser(source)
+	selectStatement := Statement(&SelectStatement{})
+	err := parser.Parse(&selectStatement)
+	if err != nil {
+		t.Fail()
+		fmt.Println(err.Error())
+		return
+	}
+	pp := selectStatement.(*SelectStatement)
+	t.Log(pp.String())
+	expected := `SELECT *
+FROM HH
+WHERE
+	JJJ
+	NOT BETWEEN 50
+	AND 90`
+	if expected != pp.String() {
+		t.Fail()
+	}
+}
 func TestPartialCase(t *testing.T) {
 	source := strings.NewReader(`CASE ProductLine
 	WHEN 'R' THEN 'Road'

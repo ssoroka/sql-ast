@@ -723,16 +723,16 @@ AggrLoop:
 	}
 	item := p.nextItem()
 	if item.Token == Over {
-		fmt.Println("Found OVER", result.String())
+		//fmt.Println("Found OVER", result.String())
 		newOverStatement := OverStatement{}
 		e := p.parseOver(&newOverStatement)
 		if e != nil {
 			fmt.Println("Error Found on Processing OVER", e.Error())
 			return e
 		}
-		tt := p.nextItem()
-		fmt.Println("TT", tt.String())
-		p.unscan()
+		//tt := p.nextItem()
+		//fmt.Println("TT", tt.String())
+		//p.unscan()
 		result.Over = newOverStatement
 	} else {
 		p.unscan()
@@ -908,6 +908,7 @@ func (p *Parser) ParseExpression(result *Expression) error {
 	for !done {
 		// see if we're done and we hit a border token.
 		item := p.scan()
+		//fmt.Println("item", item)
 		switch item.Token {
 		// case ParenClose
 		// case ParenOpen:
@@ -986,6 +987,14 @@ func (p *Parser) ParseExpression(result *Expression) error {
 	//   | case_expr
 	//   | interval_expr
 }
+func ContainsBetween(items []Item) (bool, int) {
+	for idx, val := range items {
+		if val.Token == Between || val.Token == NotBetween {
+			return true, idx
+		}
+	}
+	return false, -1
+}
 
 // parseSubExpression is called when we know we have an expression.
 func parseSubExpression(result *Expression, items []Item) error {
@@ -1000,6 +1009,7 @@ func parseSubExpression(result *Expression, items []Item) error {
 			var expression Expression
 			//pp := items[1 : len(items)-1]
 			// fmt.Println("Removing parenthesis", items[1:len(items)-1], len(pp))
+
 			if err := parseSubExpression(&expression, items[1:len(items)-1]); err != nil {
 				return errors.Wrapf(err, "error parsing paren expression: %s", itemsString(items[1:len(items)-1]))
 			}
@@ -1108,7 +1118,25 @@ func parseSubExpression(result *Expression, items []Item) error {
 			leftItems, cutIndex := GetBaseExpression(items) //items[0:idx]
 			//fmt.Println("cutIndex", cutIndex, items[cutIndex])
 			if cutIndex == -1 {
-				fmt.Println("No Right expre Detected")
+				//fmt.Println("No Right expre Detected")
+				betweenIdx := 0
+				hasBetween := false
+				if hasBetween, betweenIdx = ContainsBetween(items); hasBetween {
+					var tempLeft Expression
+					var tempRight Expression
+					//fmt.Println(items[:betweenIdx])
+					parseSubExpression(&tempLeft, items[:betweenIdx])
+					parseSubExpression(&tempRight, items[betweenIdx+1:])
+					*result = &LogicalExpression{
+						Left: tempLeft,
+						Operator: LogicalOperator{
+							Token: items[betweenIdx].Token,
+							Val:   items[betweenIdx].Val,
+						},
+						Right: tempRight,
+					}
+					return nil
+				}
 				return parseSubExpression(result, leftItems)
 			}
 			rightItems := items[cutIndex+1 : len(items)]
@@ -1144,7 +1172,7 @@ func parseSubExpression(result *Expression, items []Item) error {
 			return nil
 		}
 	}
-	comparisonOperators := []Token{Equals, GreaterThanEquals, GreaterThan, LessThanEquals, LessThan, NotEqual, IsNot, IsNotIn, Is, Like, Regexp, In, EqualNull}
+	comparisonOperators := []Token{Equals, GreaterThanEquals, GreaterThan, LessThanEquals, LessThan, NotEqual, IsNot, IsNotIn, Is, Like, Regexp, In, EqualNull, Between, NotBetween}
 	for _, op := range comparisonOperators {
 		if idx := tokenIndex(items, op); idx > 0 {
 			leftItems := items[0:idx]
@@ -1203,6 +1231,10 @@ func GetBaseExpression(items []Item) ([]Item, int) {
 	parentCount := 0
 	for idx, val := range items {
 		if (val.Token == And || val.Token == Or || val.Token == Xor) && parentCount == 0 {
+			if val.Token == And && idx-2 >= 0 && (items[idx-2].Token == Between || items[idx-2].Token == NotBetween) {
+				leftExpression = append(leftExpression, val)
+				continue
+			}
 			return leftExpression, idx
 		}
 		if val.Token == ParenOpen {

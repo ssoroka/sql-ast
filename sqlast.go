@@ -45,6 +45,8 @@ const (
 	ShiftLeft
 	ShiftRight
 	EqualNull
+	Between
+	NotBetween
 
 	// misc characters
 	Asterisk
