@@ -505,6 +505,9 @@ func (s *Scanner) tryKeywords() bool {
 	} else if s.tryReadToken("NOT BETWEEN") {
 		s.lastReadItem = Item{NotBetween, s.lastReadToken}
 		return true
+	} else if s.tryReadToken("NOT IN") {
+		s.lastReadItem = Item{NotIn, s.lastReadToken}
+		return true
 	} else if s.tryReadToken("NOT") {
 		s.lastReadItem = Item{Not, s.lastReadToken}
 		return true
@@ -584,6 +587,9 @@ func (s *Scanner) tryOperands() bool {
 		return true
 	} else if s.tryReadToken("NOT BETWEEN") {
 		s.lastReadItem = Item{NotBetween, s.lastReadToken}
+		return true
+	} else if s.tryReadToken("NOT IN") {
+		s.lastReadItem = Item{NotIn, s.lastReadToken}
 		return true
 	} else if s.tryReadToken("NOT") {
 		s.lastReadItem = Item{Not, s.lastReadToken}

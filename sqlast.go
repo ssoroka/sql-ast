@@ -35,6 +35,7 @@ const (
 	Not
 	IsNot
 	IsNotIn
+	NotIn
 	Like
 	NotLike
 	IsNotLike

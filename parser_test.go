@@ -582,6 +582,33 @@ WHERE
 		t.Fail()
 	}
 }
+func TestNotIn(t *testing.T) {
+	var ast Statement
+	input := `SELECT *
+FROM @Target_Schema.LMT_SCTY
+WHERE
+	LMT_SCTY.LMT_TYPE_IND NOT IN ("Use this as ALT to DEF EBBS~BH")
+	AND PROCESS_DATE = "@Process_Date"
+	AND PRCS_ID = '12346'`
+	err := Parse(&ast, input)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	t.Log(ast.String())
+	ll := ast.String()
+	expected := `SELECT *
+FROM @Target_Schema.LMT_SCTY
+WHERE
+	LMT_SCTY.LMT_TYPE_IND NOT IN ("Use this as ALT to DEF EBBS~BH")
+	AND PROCESS_DATE = "@Process_Date"
+	AND PRCS_ID = '12346'`
+	if ll != expected {
+		t.Error("Unexpected output, got", ast.String(), "expected", expected)
+		t.Log([]byte(ll))
+		//t.Log([]byte(expectedOutput))
+	}
+}
 func TestNotLike(t *testing.T) {
 	var ast Statement
 	err := Parse(&ast, `select 1 FROM some_other_table where a = "giraffe" and b = true AND (q is not like "" or q >= 3)`)
