@@ -23,13 +23,37 @@ type LogicalExpression struct {
 }
 
 func (le *LogicalExpression) String() string {
-	return le.Left.String() + "\n\t" + strings.ToUpper(le.Operator.Val) + " " + le.Right.String()
+	leftStr := le.Left.String()
+	rightStr := le.Right.String()
+	// switch le.Left.(type) {
+	// case *LogicalExpression:
+	// 	leftStr = "(" + leftStr + ")"
+	// }
+	// switch le.Right.(type) {
+	// case *LogicalExpression:
+	// 	rightStr = "(" + rightStr + ")"
+	// }
+	return leftStr + "\n\t" + strings.ToUpper(le.Operator.Val) + " " + rightStr
 }
 
 // OR, ||, AND, && (not?)
 type LogicalOperator struct {
 	Token Token
 	Val   string
+}
+
+// this
+type ANDLogicalExpression struct {
+	Expressions []Expression
+}
+
+func (a *ANDLogicalExpression) String() string {
+	output := []string{}
+	for _, val := range a.Expressions {
+		output = append(output, val.String())
+	}
+	return strings.Join(output, " AND ")
+
 }
 
 // bit_expr:
@@ -107,6 +131,13 @@ type Expression interface {
 	String() string //
 }
 
+type DummmyExpression struct {
+}
+
+func (d *DummmyExpression) String() string {
+	return "DUMMY"
+}
+
 // // ParseExpression finds the relevant expression type and creates it and assigns it to the receiver
 // func ParseExpression(receiver interface{}, text string) {
 
@@ -123,10 +154,53 @@ func (le *LiteralExpression) String() string {
 		return le.Val
 	case QuotedString:
 		return strconv.QuoteToASCII(le.Val)
+	case SinglQuotedString:
+		return fmt.Sprintf("'%s'", le.Val)
+	case Comma:
+		return ","
+	case ParenOpen:
+		return "("
+	case ParenClose:
+		return ")"
 	case Boolean:
 		return strings.ToUpper(le.Val)
+	case Null:
+		return "NULL"
+	case Identifier:
+		return le.Val
+	case Over:
+		return "Over "
+	case OrderBy:
+		return "Order By "
+	case PartitionBy:
+		return "Partition By "
+	case Asc:
+		return "Asc "
+	case Desc:
+		return "Desc "
+	case Unix_timestamp:
+		return "Unix_timestamp"
+	case From_unixtime:
+		return "From_unixtime"
+	case As:
+		return "As"
+	case Nvl:
+		return "NVL"
+	case Concat:
+		return "Concat"
+	case Trim:
+		return "Trim"
+	case Cast:
+		return "Cast"
+	case Explode:
+		return "Explode"
+	case Lpad:
+		return "Lpad"
+	case Asterisk:
+		return "*"
 	default:
-		panic("can't handle literal expression token type: " + fmt.Sprintf("%d", le.Token))
+		//panic("can't handle literal expression token type: " + fmt.Sprintf("%d %s", le.Token, le.Val))
+		return le.Val
 	}
 }
 
@@ -140,7 +214,7 @@ func (pe *ParenExpression) String() string {
 }
 
 type BooleanExpression struct {
-	Left     IdentifierExpression
+	Left     Expression
 	Operator Comparison
 	Right    Expression
 }
@@ -165,7 +239,20 @@ func (ie *IdentifierExpression) String() string {
 	return ie.Name
 }
 
-type FunctionExpression struct{}
+type FunctionExpression struct {
+	FunctionName string
+	Parameters   []Item
+}
+
+func (f *FunctionExpression) String() string {
+	outString := f.FunctionName + "("
+	for _, p := range f.Parameters {
+		outString += p.Val
+	}
+	outString += ")"
+	return outString
+}
+
 type NotExpression struct{}
 type SubqueryExpression struct{}
 type ExistsExpression struct{}

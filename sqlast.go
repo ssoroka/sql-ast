@@ -16,10 +16,12 @@ const (
 	Time
 	Boolean
 	QuotedString
+	SinglQuotedString
 
 	// Operators
 	Equals
 	NotEqual
+	NotEqualSynonim
 	LessThan
 	LessThanEquals
 	GreaterThan
@@ -31,7 +33,14 @@ const (
 	Xor
 	Is
 	Not
+	IsNot
+	IsNotIn
+	NotIn
 	Like
+	NotLike
+	IsNotLike
+	RLike
+	NotRLike
 	Regexp
 	In
 	Multiply
@@ -41,6 +50,9 @@ const (
 	Modulus // %
 	ShiftLeft
 	ShiftRight
+	EqualNull
+	Between
+	NotBetween
 
 	// misc characters
 	Asterisk
@@ -58,6 +70,68 @@ const (
 	OrderBy
 	Limit
 	ForUpdate
+	Join
+	LeftJoin
+	LeftOuterJoin
+	RightJoin
+	RightOuterJoin
+	InnerJoin
+	FullInnerJoin
+	FullOuterJoin
+	On
+	Null
+	Case
+	When
+	Then
+	Else
+	End
+	Asc
+	Desc
+	As
+	Union
+	All
+
+	//aggregate
+	Sum
+	Avg
+	Count
+	Max
+	Min
+	Concat
+	Nvl
+	From_unixtime
+	Trim
+	Unix_timestamp
+	Upper
+	//another one
+	Lower
+	Split
+	Substr
+	Lpad
+	RegexReplace
+	DateDiff
+	Explode
+	Length
+	COALESCE
+	Cast
+
+	ToDate
+	Year
+	Quarter
+	Month
+	Hour
+	Minute
+	LastDay
+	DateSub
+	Trunc
+	CurrentDate
+
+	// SqlServer specific keyword, for now
+	RowNum
+	Rank
+	DenseRank
+	Over
+	PartitionBy
 )
 
 var literals = []Token{Identifier, Number, Date, Time, Boolean, QuotedString}

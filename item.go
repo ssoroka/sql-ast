@@ -33,9 +33,30 @@ func (i Item) Inspect() string {
 		tokenName = "Boolean"
 	case QuotedString:
 		tokenName = "QuotedString"
-
+	case LeftJoin:
+		tokenName = "LeftJoin"
+	case RightJoin:
+		tokenName = "RightJoin"
+	case LeftOuterJoin:
+		tokenName = "LeftOuterJoin"
+	case FullOuterJoin:
+		tokenName = "FullOuterJoin"
+	case FullInnerJoin:
+		tokenName = "FullInnerJoin"
+	case RightOuterJoin:
+		tokenName = "RightOuterJoin"
+	case Join:
+		tokenName = "Join"
+	case InnerJoin:
+		tokenName = "InnerJoin"
+	case On:
+		tokenName = "On"
+	case Null:
+		tokenName = "Null"
 	case Equals:
 		tokenName = "Equals"
+	case EqualNull:
+		tokenName = "EqualNull"
 	case LessThan:
 		tokenName = "LessThan"
 	case LessThanEquals:
@@ -54,7 +75,18 @@ func (i Item) Inspect() string {
 		tokenName = "Is"
 	case Not:
 		tokenName = "Not"
-
+	case IsNot:
+		tokenName = "IsNot"
+	case IsNotIn:
+		tokenName = "IsNotIn"
+	case Like:
+		tokenName = "Like"
+	case NotLike:
+		tokenName = "NotLike"
+	case RLike:
+		tokenName = "RLike"
+	case NotRLike:
+		tokenName = "NotRLike"
 	case Asterisk:
 		tokenName = "Asterisk"
 	case Comma:
@@ -65,9 +97,15 @@ func (i Item) Inspect() string {
 		tokenName = "ParenOpen"
 	case ParenClose:
 		tokenName = "ParenClose"
+	case Multiply:
+		tokenName = "Multiply"
 
 	case Select:
 		tokenName = "Select"
+	case From_unixtime:
+		tokenName = "From_unixtime"
+	case Unix_timestamp:
+		tokenName = "UNIX_Timestamp"
 	case From:
 		tokenName = "From"
 	case Where:
@@ -82,6 +120,70 @@ func (i Item) Inspect() string {
 		tokenName = "Limit"
 	case ForUpdate:
 		tokenName = "ForUpdate"
+	case Sum:
+		tokenName = "Sum"
+	case Avg:
+		tokenName = "Avg"
+	case Max:
+		tokenName = "Max"
+	case Min:
+		tokenName = "Min"
+	case Count:
+		tokenName = "Count"
+	case Nvl:
+		tokenName = "NVL"
+	case Trim:
+		tokenName = "Trim"
+	case ToDate:
+		tokenName = "ToDate"
+	case Year:
+		tokenName = "Year"
+	case Quarter:
+		tokenName = "Quarter"
+	case Month:
+		tokenName = "Month"
+	case Hour:
+		tokenName = "Hour"
+	case Minute:
+		tokenName = "Minute"
+	case LastDay:
+		tokenName = "LastDay"
+	case DateSub:
+		tokenName = "DateSub"
+	case Trunc:
+		tokenName = "Trunc"
+	case CurrentDate:
+		tokenName = "Current_date"
+	case Concat:
+		tokenName = "Concat"
+	case As:
+		tokenName = "As"
+	case Case:
+		tokenName = "Case"
+	case Then:
+		tokenName = "Then"
+	case When:
+		tokenName = "When"
+	case End:
+		tokenName = "End"
+	case NotEqualSynonim:
+		tokenName = "NotEqualSynonim"
+	case NotEqual:
+		tokenName = "NotEqual"
+	case SinglQuotedString:
+		tokenName = "SingleQuotedStr"
+	case Asc:
+		tokenName = "Asc"
+	case Desc:
+		tokenName = "Desc"
+	case RowNum:
+		tokenName = "RowNumber"
+	case In:
+		tokenName = "In"
+	case Union:
+		tokenName = "Union"
+	case All:
+		tokenName = "Union"
 	default:
 		tokenName = "Unknwon Token"
 	}
