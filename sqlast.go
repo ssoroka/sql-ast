@@ -90,6 +90,9 @@ const (
 	As
 	Union
 	All
+	Insert
+	Update
+	Delete
 
 	//aggregate
 	Sum

@@ -102,6 +102,12 @@ func (i Item) Inspect() string {
 
 	case Select:
 		tokenName = "Select"
+	case Update:
+		tokenName = "Update"
+	case Insert:
+		tokenName = "Insert"
+	case Delete:
+		tokenName = "Delete"
 	case From_unixtime:
 		tokenName = "From_unixtime"
 	case Unix_timestamp:
